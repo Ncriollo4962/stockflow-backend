@@ -50,4 +50,16 @@ public class Usuario {
     @Version // Para el campo 'version' de tu SQL (Optimistic Locking)-previene errrores de integridad de datos
     private Integer version;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Usuario other)) return false;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
 }

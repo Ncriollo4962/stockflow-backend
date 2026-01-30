@@ -1,10 +1,7 @@
 package com.stockflow.core.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,6 +32,7 @@ public class Producto {
     // Relación Many-to-One con Categoría
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id", nullable = false)
+    @ToString.Exclude
     private Categoria categoria;
 
     @Column(name = "precio_costo", nullable = false, precision = 10, scale = 2)
@@ -56,5 +54,17 @@ public class Producto {
 
     @Version // El escudo contra errores de stock
     private Integer version;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Producto other)) return false;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 
 }
