@@ -1,0 +1,18 @@
+# Java y Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Configuración local y Logs
+*.log
+.mvn/
+application.properties.local
