@@ -24,8 +24,9 @@ public class CategoriaDto extends RepresentationModel<CategoriaDto> implements E
     private String nombre;
     private String descripcion;
     private Boolean estado;
+    private Integer version;
 
-    // Control de campos (Definiciones por defecto)
+    // Banderas de control (Template) para decidir qué campos poblar
     @JsonIgnore
     @Builder.Default
     private boolean defId = true;
@@ -38,6 +39,12 @@ public class CategoriaDto extends RepresentationModel<CategoriaDto> implements E
     @JsonIgnore
     @Builder.Default
     private boolean defDescripcion = true;
+    @JsonIgnore
+    @Builder.Default
+    private boolean defEstado = true;
+    @JsonIgnore
+    @Builder.Default
+    private boolean defVersion = true;
 
     public static CategoriaDto build() {
         return CategoriaDto.builder().build();
@@ -57,6 +64,8 @@ public class CategoriaDto extends RepresentationModel<CategoriaDto> implements E
         if (template.isDefCodigo()) dto.setCodigo(entity.getCodigo());
         if (template.isDefNombre()) dto.setNombre(entity.getNombre());
         if (template.isDefDescripcion()) dto.setDescripcion(entity.getDescripcion());
+        if (template.isDefEstado()) dto.setEstado(entity.getEstado());
+        if (template.isDefVersion()) dto.setVersion(entity.getVersion());
 
         return dto;
     }
@@ -68,6 +77,8 @@ public class CategoriaDto extends RepresentationModel<CategoriaDto> implements E
                 .codigo(this.codigo)
                 .nombre(this.nombre)
                 .descripcion(this.descripcion)
+                .estado(this.estado)
+                .version(this.version)
                 .build();
     }
 }

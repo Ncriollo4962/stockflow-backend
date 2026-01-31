@@ -1,12 +1,9 @@
 package com.stockflow.core.service;
 
 import com.stockflow.core.dto.CategoriaDto;
+import com.stockflow.core.entity.Categoria;
+import com.stockflow.core.utils.common.GenericCrud;
 
-import java.util.List;
+public interface CategoriaService extends GenericCrud<CategoriaDto, Categoria, Integer> {
 
-public interface CategoriaService {
-
-    CategoriaDto save(CategoriaDto categoryDto);
-    List<CategoriaDto> findAll();
-    CategoriaDto findById(Integer id);
 }

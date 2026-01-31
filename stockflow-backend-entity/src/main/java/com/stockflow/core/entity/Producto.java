@@ -2,6 +2,7 @@ package com.stockflow.core.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "producto")
+@DynamicUpdate
 public class Producto {
 
     private static final long serialVersionUID = 1L;
@@ -42,7 +44,7 @@ public class Producto {
     private BigDecimal precioVenta;
 
     @Column(name = "cantidad_minima", nullable = false)
-    private Integer cantidadMinima = 10;
+    private Integer cantidadMinima = 0;
 
     private Boolean estado = true;
 
