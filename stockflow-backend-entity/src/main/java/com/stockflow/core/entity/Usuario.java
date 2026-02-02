@@ -1,13 +1,28 @@
 package com.stockflow.core.entity;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import com.stockflow.core.enums.EnumCodigoUserRole;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -15,7 +30,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "usuario")
-public class Usuario {
+public class Usuario implements UserDetails {
 
     private static final long serialVersionUID = 1L;
 
@@ -35,9 +50,8 @@ public class Usuario {
     @Column(nullable = false)
     private String contrasena;
 
-    @Enumerated(EnumType.STRING) // Guarda el texto 'admin_ti', etc.
-    @Column(nullable = false)
-    private EnumCodigoUserRole rol;
+    @Column( length = 50, nullable = false)
+    private String rol;
 
     private Boolean estado = true;
 
@@ -61,5 +75,41 @@ public class Usuario {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		// Convierte el Enum de roles en una autoridad que Spring entienda
+    return List.of(new SimpleGrantedAuthority( this.rol.toUpperCase()));
+	}
+
+	@Override
+	public String getPassword() {
+		return this.contrasena;
+	}
+
+	@Override
+	public String getUsername() {
+		return this.email;
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+		return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return estado;
+	}
 
 }

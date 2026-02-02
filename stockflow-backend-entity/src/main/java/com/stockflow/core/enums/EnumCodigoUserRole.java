@@ -1,20 +1,14 @@
 package com.stockflow.core.enums;
 
 public enum EnumCodigoUserRole {
-    ADMIN_TI("admin_ti"),
-    GERENTE_ALMACEN("gerente_almacen"),
-    ALMACENERO("almacenero"),
-    VENDEDOR("vendedor"),
-    ASISTENTE("asistente");
-
-    private String codigo;
-
-    EnumCodigoUserRole(String codigo) {
-        this.codigo = codigo;
-    }
+    ROLE_ADMIN_TI,
+    ROLE_GERENTE_ALMACEN,
+    ROLE_ALMACENERO,
+    ROLE_VENDEDOR,
+    ROLE_ASISTENTE;
 
     public String getCodigo() {
-        return this.codigo;
+        return this.name();
     }
 
 }

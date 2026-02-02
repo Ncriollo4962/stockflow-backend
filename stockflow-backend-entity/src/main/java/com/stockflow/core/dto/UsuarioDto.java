@@ -27,7 +27,7 @@ public class UsuarioDto extends RepresentationModel<UsuarioDto> implements Entit
     private String email;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String contrasena;
-    private EnumCodigoUserRole rol;
+    private String rol;
     private Boolean estado;
     private Integer version;
 

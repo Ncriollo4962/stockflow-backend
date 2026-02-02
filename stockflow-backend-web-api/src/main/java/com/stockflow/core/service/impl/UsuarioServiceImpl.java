@@ -1,5 +1,11 @@
 package com.stockflow.core.service.impl;
 
+import java.util.List;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.stockflow.core.dto.UsuarioDto;
 import com.stockflow.core.entity.Usuario;
 import com.stockflow.core.exception.ConflictException;
@@ -7,17 +13,15 @@ import com.stockflow.core.exception.ValidationException;
 import com.stockflow.core.repository.UsuarioRepository;
 import com.stockflow.core.service.UsuarioService;
 import com.stockflow.core.utils.ValidationUtil;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -26,6 +30,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         validarCamposBaseUsuario(usuarioDto, false);
 
         Usuario user = usuarioDto.toEntity();
+   
+        if (usuarioDto.getContrasena() != null) {
+            user.setContrasena(passwordEncoder.encode(usuarioDto.getContrasena()));
+        }
+
         user.setId(null);
         user.setVersion(null);
         if (user.getEstado() == null) {
@@ -51,14 +60,12 @@ public class UsuarioServiceImpl implements UsuarioService {
         userToUpdate.setCodigo(usuarioDto.getCodigo());
         userToUpdate.setNombre(usuarioDto.getNombre());
         userToUpdate.setEmail(usuarioDto.getEmail());
-        userToUpdate.setRol(usuarioDto.getRol());
+        userToUpdate.setRol(usuarioDto.getRol().toUpperCase());
         userToUpdate.setEstado(usuarioDto.getEstado());
 
         if (usuarioDto.getContrasena() != null && !usuarioDto.getContrasena().isBlank()) {
-            // IMPORTANTE: Aquí deberías encriptarla antes de setearla
-            // String encodedPassword = passwordEncoder.encode(usuarioDto.getContrasena());
-            // userToUpdate.setContrasena(encodedPassword);
-            userToUpdate.setContrasena(usuarioDto.getContrasena()); // Por ahora directo
+            String encodedPassword = passwordEncoder.encode(usuarioDto.getContrasena());
+            userToUpdate.setContrasena(encodedPassword);
         }
 
         Usuario savedUser = userRepository.saveAndFlush(userToUpdate);
@@ -93,7 +100,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     private static void validateVersion(UsuarioDto usuarioDto, Usuario usuarioBD) {
         if (usuarioDto.getVersion() != null && !usuarioBD.getVersion().equals(usuarioDto.getVersion())) {
             UsuarioDto actual = UsuarioDto.build().fromEntity(new UsuarioDto(), usuarioBD);
-            throw new ConflictException("El usuario ha sido modificado por otro administrador. Por favor, recargue la página", actual);
+            throw new ConflictException(
+                    "El usuario ha sido modificado por otro administrador. Por favor, recargue la página", actual);
         }
     }
 
@@ -104,7 +112,6 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .map(user -> UsuarioDto.build().fromEntity(user))
                 .orElseThrow(() -> new ValidationException("Usuario no encontrado con ID: " + id));
     }
-
 
     @Override
     public UsuarioDto findByNameUser(String email) {
