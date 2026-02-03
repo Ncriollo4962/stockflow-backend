@@ -1,20 +1,18 @@
 package com.stockflow.core.entity;
 
+import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "categoria")
-public class Categoria {
+@Table(name = "ubicacion")
+public class Ubicacion {
 
     private static final long serialVersionUID = 1L;
 
@@ -25,29 +23,40 @@ public class Categoria {
     @Column(unique = true, nullable = false, length = 50)
     private String codigo;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(nullable = false, length = 150)
     private String nombre;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    @Column(nullable = false)
     private Boolean estado = true;
 
     @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "fecha_actualizacion", insertable = false, updatable = false)
+    private LocalDateTime fechaActualizacion;
+
     @Version
     private Integer version;
 
     @ToString.Exclude // Evita bucles infinitos
-    @Builder.Default  // Evita NullPointerException al usar Builder
-    @OneToMany(mappedBy = "categoria", fetch = FetchType.LAZY)
-    private List<Producto> productos = new ArrayList<>();
+    @Builder.Default // Evita NullPointerException al usar Builder
+    @OneToMany(mappedBy = "ubicacion", fetch = FetchType.LAZY)
+    private List<InventarioItem> inventarioItems = new java.util.ArrayList<>();
+
+    @ToString.Exclude // Evita bucles infinitos
+    @Builder.Default // Evita NullPointerException al usar Builder
+    @OneToMany(mappedBy = "ubicacion", fetch = FetchType.LAZY)
+    private List<MovimientoInventario> movimientoInventarios = new java.util.ArrayList<>();
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Categoria other)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Ubicacion other))
+            return false;
         return id != null && id.equals(other.getId());
     }
 
@@ -55,4 +64,5 @@ public class Categoria {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

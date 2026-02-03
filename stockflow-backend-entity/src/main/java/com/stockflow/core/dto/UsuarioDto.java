@@ -1,15 +1,20 @@
 package com.stockflow.core.dto;
 
+import java.io.Serializable;
+
+import org.springframework.hateoas.RepresentationModel;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockflow.core.entity.EntityDto;
 import com.stockflow.core.entity.Usuario;
-import com.stockflow.core.enums.EnumCodigoUserRole;
-import lombok.*;
-import org.springframework.hateoas.RepresentationModel;
 
-import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder

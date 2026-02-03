@@ -8,21 +8,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.stockflow.core.enums.EnumCodigoUserRole;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Data
 @Entity
@@ -63,6 +50,21 @@ public class Usuario implements UserDetails {
 
     @Version // Para el campo 'version' de tu SQL (Optimistic Locking)-previene errrores de integridad de datos
     private Integer version;
+
+    @ToString.Exclude // Evita bucles infinitos
+    @Builder.Default // Evita NullPointerException al usar Builder
+    @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private List<OrdenCompra> ordenCompras = new java.util.ArrayList<>();
+
+    @ToString.Exclude // Evita bucles infinitos
+    @Builder.Default // Evita NullPointerException al usar Builder
+    @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private List<MovimientoInventario> movimientoInventarios = new java.util.ArrayList<>();
+
+    @ToString.Exclude // Evita bucles infinitos
+    @Builder.Default // Evita NullPointerException al usar Builder
+    @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private List<OrdenVenta> ordenVenta = new java.util.ArrayList<>();
 
     @Override
     public boolean equals(Object o) {
