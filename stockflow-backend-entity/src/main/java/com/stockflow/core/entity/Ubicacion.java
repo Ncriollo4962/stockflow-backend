@@ -26,7 +26,7 @@ public class Ubicacion {
     @Column(nullable = false, length = 150)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 350)
     private String descripcion;
 
     @Column(nullable = false)

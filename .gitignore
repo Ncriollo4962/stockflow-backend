@@ -12,7 +12,11 @@ target/
 *.ipr
 out/
 
+# VS Code
+.vscode/
+
 # Configuración local y Logs
 *.log
 .mvn/
 application.properties.local
+.env

@@ -30,8 +30,8 @@ public class Producto {
    @Column(nullable = false, length = 150)
    private String nombre;
 
-   @Column(columnDefinition = "TEXT")
-   private String descripcion;
+   @Column(length = 350)
+    private String descripcion;
 
    // Relación Many-to-One con Categoría
    @ManyToOne(fetch = FetchType.LAZY)

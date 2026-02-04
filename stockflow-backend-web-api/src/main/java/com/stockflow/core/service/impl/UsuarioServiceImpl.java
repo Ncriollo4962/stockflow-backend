@@ -78,9 +78,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     public void delete(UsuarioDto usuarioDto) {
 
         if (userRepository.existsById(usuarioDto.getId())) {
-            userRepository.delete(usuarioDto.toEntity());
+            userRepository.deleteById(usuarioDto.getId());
         } else {
-            throw new ValidationException("No se elimino el usuario con ID: " + usuarioDto.getId());
+            throw new ValidationException("No se encontró el usuario con ID: " + usuarioDto.getId());
         }
 
     }

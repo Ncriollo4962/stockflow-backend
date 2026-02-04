@@ -28,7 +28,7 @@ public class Categoria {
     @Column(unique = true, nullable = false, length = 100)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 350)
     private String descripcion;
 
     private Boolean estado = true;

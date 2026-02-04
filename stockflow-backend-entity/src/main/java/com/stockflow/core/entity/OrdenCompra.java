@@ -49,7 +49,7 @@ public class OrdenCompra {
     @Column(name = "total_compra", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalCompra = BigDecimal.ZERO;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 350)
     private String notas;
 
     @Column(name = "fecha_creacion", insertable = false, updatable = false)

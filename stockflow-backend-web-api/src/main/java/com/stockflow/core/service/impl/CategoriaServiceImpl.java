@@ -91,9 +91,9 @@ public class CategoriaServiceImpl implements CategoriaService {
     public void delete(CategoriaDto categoriaDto) {
 
         if (categoryRepository.existsById(categoriaDto.getId())) {
-            categoryRepository.delete(categoriaDto.toEntity());
+            categoryRepository.deleteById(categoriaDto.getId());
         } else {
-            throw new ValidationException("No se elimino la Categoría con ID: " + categoriaDto.getId());
+            throw new ValidationException("No se encontró la Categoría con ID: " + categoriaDto.getId());
         }
 
     }

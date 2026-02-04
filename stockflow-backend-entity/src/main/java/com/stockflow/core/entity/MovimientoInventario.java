@@ -52,8 +52,8 @@ public class MovimientoInventario {
    @Column(name = "fecha_movimiento", nullable = false)
    private LocalDateTime fechaMovimiento;
 
-   @Column(columnDefinition = "TEXT")
-   private String notas;
+   @Column(length = 350)
+    private String notas;
 
    @Version
    private Integer version;

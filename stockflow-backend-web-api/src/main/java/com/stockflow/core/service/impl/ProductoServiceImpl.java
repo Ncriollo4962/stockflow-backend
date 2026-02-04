@@ -99,9 +99,9 @@ public class ProductoServiceImpl implements ProductoService {
     public void delete(ProductoDto productoDto) {
 
         if (productRepository.existsById(productoDto.getId())) {
-            productRepository.delete(productoDto.toEntity());
+            productRepository.deleteById(productoDto.getId());
         } else {
-            throw new ValidationException("No se elimino el producto con ID: " + productoDto.getId());
+            throw new ValidationException("No se encontró el producto con ID: " + productoDto.getId());
         }
 
     }

@@ -38,7 +38,7 @@ public class Proveedor {
     @Column(length = 20)
     private String telefono;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 350)
     private String direccion;
 
     @Column(name = "ciudad_pais", length = 100)
