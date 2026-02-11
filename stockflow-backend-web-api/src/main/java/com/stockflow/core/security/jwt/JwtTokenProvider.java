@@ -2,6 +2,7 @@ package com.stockflow.core.security.jwt;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -33,6 +34,8 @@ public class JwtTokenProvider {
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
 
+    private final long REFRESH_TOKEN_EXPIRATION = 24 * 60 * 60 * 1000; // 1 día
+
     /**
      * MÉTODO: Generar Token
      * Uso: Se llama desde el AuthService cuando el usuario pone bien su contraseña.
@@ -41,7 +44,22 @@ public class JwtTokenProvider {
      */
     public String generateToken(UserDetails userDetails) {
         // Map.of() es una forma moderna de Java para crear un mapa vacío (sin claims extra).
-        return buildToken(Map.of(), userDetails, jwtExpiration);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "ACCESS");
+        return buildToken(claims, userDetails, jwtExpiration);
+    }
+
+     /**
+     * MÉTODO: Generar Refresh Token
+     * Uso: Se llama desde el AuthService cuando el usuario quiere refrescar su token.
+     * @param userDetails Objeto de Spring Security que contiene los datos del usuario.
+     * @return Un String que representa el JWT firmado.
+     */
+    public String generateRefreshToken(UserDetails userDetails) {
+        // Map.of() es una forma moderna de Java para crear un mapa vacío (sin claims extra).
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "REFRESH");
+        return buildToken(claims, userDetails, REFRESH_TOKEN_EXPIRATION);
     }
 
     /**
@@ -116,5 +134,19 @@ public class JwtTokenProvider {
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
-    
+
+    /**
+     * Verifica si el token tiene el claim "type" con valor "REFRESH".
+     * Esto evita que alguien use un Access Token para generar nuevos tokens.
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            final Claims claims = extractAllClaims(token);
+            String type = claims.get("type", String.class);
+            return "REFRESH".equals(type);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }
