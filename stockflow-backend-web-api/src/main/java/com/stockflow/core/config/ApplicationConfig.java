@@ -27,6 +27,9 @@ public class ApplicationConfig {
         authProvider.setUserDetailsService(userDetailsService);
         // Le decimos qué algoritmo usar para comparar contraseñas
         authProvider.setPasswordEncoder(passwordEncoder());
+
+        authProvider.setHideUserNotFoundExceptions(false);
+        
         return authProvider;
     }
 

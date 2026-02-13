@@ -10,6 +10,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.stockflow.core.handler.JwtAccessDeniedHandler;
+import com.stockflow.core.handler.JwtAuthenticationEntryPoint;
 import com.stockflow.core.security.jwt.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -21,12 +23,19 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // 1. Deshabilitar CSRF (Indispensable para Stateless)
                 .csrf(AbstractHttpConfigurer::disable)
+
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) 
+                        .accessDeniedHandler(jwtAccessDeniedHandler)      
+                )
 
                 // 2. Configuración de rutas
                 .authorizeHttpRequests(auth -> auth

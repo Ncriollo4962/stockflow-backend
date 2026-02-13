@@ -2,8 +2,8 @@ package com.stockflow.core.handler;
 
 import java.io.IOException;
 
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,22 +17,22 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAccessDeniedHandler implements AccessDeniedHandler {
+public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response,
-            AccessDeniedException accessDeniedException) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException authException) throws IOException, ServletException {
         
         response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         
         ApiResponse apiResponse = ApiResponse.builder()
                 .error(true)
-                .titulo("Acceso denegado")
-                .mensaje("No tiene permisos para acceder a este recurso.")
-                .codigo("403")
+                .titulo("No autorizado")
+                .mensaje("No tiene credenciales válidas para acceder a este recurso.")
+                .codigo("401")
                 .type(TypeException.E)
                 .build();
         

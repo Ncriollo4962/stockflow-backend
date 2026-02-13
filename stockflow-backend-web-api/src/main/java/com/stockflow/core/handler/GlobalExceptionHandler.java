@@ -36,9 +36,22 @@ public class GlobalExceptionHandler {
                 .titulo("Conflicto de Versión")
                 .mensaje(ex.getMessage())
                 .type(TypeException.W)
-                .data(ex.getCurrentData()) // Enviamos los datos reales de la BD
+                .data(ex.getCurrentData()) 
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse> handleBusinessException(BusinessException ex) {
+        ApiResponse response = ApiResponse.builder()
+                .error(true)
+                .codigo(ex.getCodigo())
+                .titulo(ex.getTitulo())
+                .mensaje(ex.getMessage())
+                .type(ex.getType())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.valueOf(Integer.parseInt(ex.getCodigo())));
+
     }
 
 }

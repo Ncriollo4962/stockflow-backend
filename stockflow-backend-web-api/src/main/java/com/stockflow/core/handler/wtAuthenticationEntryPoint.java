@@ -1,5 +1,0 @@
-package com.stockflow.core.handler;
-
-public class wtAuthenticationEntryPoint {
-    
-}
