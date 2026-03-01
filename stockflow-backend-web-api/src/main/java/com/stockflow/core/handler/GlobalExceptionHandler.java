@@ -27,6 +27,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    // 2. Manejo de Excepciones Generales (500)
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse> handleGeneralException(Exception ex) {
+        ApiResponse response = ApiResponse.builder()
+                .error(true)
+                .codigo("500")
+                .titulo("Error Interno")
+                .mensaje("Ha ocurrido un error inesperado: " + ex.getMessage())
+                .type(TypeException.E)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+
     // 3. Manejo de Conflicto de Versión (Optimistic Locking)
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiResponse> handleConflict(ConflictException ex) {

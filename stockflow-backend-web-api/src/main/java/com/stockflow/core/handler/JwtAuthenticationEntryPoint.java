@@ -25,6 +25,17 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
         
+        // Si el error ya fue manejado y escrito en la respuesta (por ejemplo, por GlobalExceptionHandler), no hacemos nada.
+        if (response.isCommitted()) {
+            return;
+        }
+
+        // Si hay una excepción original que no es de autenticación (ej. error 500 de base de datos),
+        // dejamos que Spring Boot o el GlobalExceptionHandler lo maneje en lugar de forzar un 401.
+        if (request.getAttribute("javax.servlet.error.exception") != null) {
+            throw new ServletException((Exception) request.getAttribute("javax.servlet.error.exception"));
+        }
+        
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         
