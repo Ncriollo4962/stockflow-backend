@@ -78,7 +78,11 @@ public class DetalleOrdenCompraDto extends RepresentationModel<DetalleOrdenCompr
          dto.setSubtotal(entity.getSubtotal());
 
       if (template.getDefOrdenCompra() != null && entity.getOrdenCompra() != null) {
-         dto.setOrdenCompra(OrdenCompraDto.build().fromEntity(template.getDefOrdenCompra(), entity.getOrdenCompra()));
+         // Evitar recursión infinita: La orden dentro del detalle NO debe traer sus detalles de vuelta
+         OrdenCompraDto ordenTemplate = template.getDefOrdenCompra();
+         ordenTemplate.setDefDetallesOrdenCompra(null);
+         
+         dto.setOrdenCompra(ordenTemplate.fromEntity(entity.getOrdenCompra()));
       }
       if (template.getDefProducto() != null && entity.getProducto() != null) {
          dto.setProducto(ProductoDto.build().fromEntity(template.getDefProducto(), entity.getProducto()));

@@ -14,6 +14,6 @@ import com.stockflow.core.entity.OrdenCompra;
 public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Integer> {
     Long countByEstado(String estado);
 
-    @Query("SELECT FUNCTION('MONTH', o.fechaCompra) as mes, SUM(o.totalCompra) as total FROM OrdenCompra o WHERE FUNCTION('YEAR', o.fechaCompra) = :anio GROUP BY FUNCTION('MONTH', o.fechaCompra) ORDER BY FUNCTION('MONTH', o.fechaCompra)")
+    @Query("SELECT FUNCTION('MONTH', o.fechaOrdenCompra) as mes, SUM(o.totalCompra) as total FROM OrdenCompra o WHERE FUNCTION('YEAR', o.fechaOrdenCompra) = :anio GROUP BY FUNCTION('MONTH', o.fechaOrdenCompra) ORDER BY FUNCTION('MONTH', o.fechaOrdenCompra)")
     List<Map<String, Object>> getComprasPorMes(@Param("anio") Integer anio);
 }

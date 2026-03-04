@@ -19,22 +19,22 @@ public interface ProductoControllerOpenApi {
 
     @Operation(summary = "Lista todos los productos registrados")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProductoDto.class)))
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> findAll();
 
     @Operation(summary = "Registra un nuevo producto")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Producto registrado con éxito")
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> insert(@RequestBody ProductoDto d);
 
     @Operation(summary = "Actualiza los datos de un producto existente")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Producto actualizado con éxito")
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/update", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> update(@RequestBody ProductoDto d);
 
     @Operation(summary = "Eliminar un producto")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Producto eliminado con éxito")
-    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(path = "/delete", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> delete(@RequestBody ProductoDto d);
 
     @Operation(summary = "Busca un producto por su código")

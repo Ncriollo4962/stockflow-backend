@@ -17,20 +17,20 @@ public abstract class GenericController <D extends EntityDto<E, D>, E, K> {
 
     public abstract GenericCrud<D, E, K> getCrud();
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse> insert(@RequestBody D d) {
         d = this.getCrud().insert(d);
         URI location = this.getLocation(d);
         return ResponseEntity.created(location).body(ApiResponse.create("Se registró correctamente", d));
     }
 
-    @PutMapping
+    @PutMapping("/update")
     public ResponseEntity<ApiResponse> update(@RequestBody D d) {
         d = this.getCrud().update(d);
         return ResponseEntity.ok(ApiResponse.ok("Se actualizó correctamente", d));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/delete")
     public ResponseEntity<ApiResponse> delete(@RequestBody D d) {
         this.getCrud().delete(d);
         return ResponseEntity.ok(ApiResponse.ok("Se eliminó correctamente", ""));

@@ -226,12 +226,12 @@ public class DatabaseInitializer {
                     .numeroOrden("OC-2024-00" + (i + 1))
                     .proveedor(proveedores.get(i))
                     .usuario(usuarios.get(0)) // Admin
-                    .fechaCompra(LocalDateTime.now().minusDays(i * 2))
+                    .fechaOrdenCompra(LocalDateTime.now().minusDays(i * 2))
                     .fechaEntrega(LocalDateTime.now().plusDays(5))
                     .estado(EnumCodigoEstado.PENDIENTE_RECEPCION.name())
                     .totalCompra(new BigDecimal("1000.00"))
                     .notas("Nota de prueba " + (i + 1))
-                    .detalleOrdenCompras(new ArrayList<>())
+                    .detallesOrdenCompra(new ArrayList<>())
                     .build();
 
             // Agregar detalle
@@ -243,7 +243,7 @@ public class DatabaseInitializer {
                     .subtotal(productos.get(i).getPrecioCosto().multiply(new BigDecimal("10")))
                     .build();
             
-            orden.getDetalleOrdenCompras().add(detalle);
+            orden.getDetallesOrdenCompra().add(detalle);
             orden.setTotalCompra(detalle.getSubtotal()); // Actualizar total
             
             ordenes.add(orden);
