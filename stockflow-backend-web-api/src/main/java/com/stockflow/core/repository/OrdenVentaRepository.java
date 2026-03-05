@@ -3,6 +3,8 @@ package com.stockflow.core.repository;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,8 @@ import com.stockflow.core.entity.OrdenVenta;
 
 @Repository
 public interface OrdenVentaRepository extends JpaRepository<OrdenVenta, Integer> {
+
+    Optional<OrdenVenta> findTopByOrderByIdDesc();
 
     Long countByEstado(String estado);
 

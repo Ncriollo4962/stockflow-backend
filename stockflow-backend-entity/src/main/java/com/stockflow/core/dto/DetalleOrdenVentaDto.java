@@ -94,10 +94,10 @@ public class DetalleOrdenVentaDto extends RepresentationModel<DetalleOrdenVentaD
             .cantidad(this.cantidad)
             .precioUnitario(this.precioUnitario)
             .ordenVenta(this.ordenVenta != null && this.ordenVenta.getId() != null
-                  ? OrdenVenta.builder().id(this.ordenVenta.getId()).build()
+                  ? OrdenVenta.builder().id(this.ordenVenta.getId()).version(this.ordenVenta.getVersion()).build()
                   : null)
             .producto(this.producto != null && this.producto.getId() != null
-                  ? Producto.builder().id(this.producto.getId()).build()
+                  ? Producto.builder().id(this.producto.getId()).version(this.producto.getVersion()).build()
                   : null)
             .build();
    }

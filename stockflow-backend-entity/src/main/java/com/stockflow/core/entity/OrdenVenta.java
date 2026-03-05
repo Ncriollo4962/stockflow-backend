@@ -47,7 +47,7 @@ public class OrdenVenta {
    @Column(name = "fecha_orden", nullable = false)
    private LocalDateTime fechaVenta;
 
-   @Column(name = "total_orden", updatable = false, nullable = false, precision = 12, scale = 2)
+   @Column(name = "total_orden", nullable = false, precision = 12, scale = 2)
    private BigDecimal totalVenta = BigDecimal.ZERO;
 
    @Column(nullable = false, length = 50)
