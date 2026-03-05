@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +50,8 @@ public class ProductoServiceImpl implements ProductoService {
 
         validarCamposBaseProducto(productDto);
 
-        Producto productoBD = productRepository.findById(productDto.getId())
+        Producto productoBD = productRepository
+                .findById(Objects.requireNonNull(productDto.getId(), "Product ID must not be null"))
                 .orElseThrow(() -> new ValidationException("Producto no encontrado con ID: " + productDto.getId()));
 
         validateVersion(productDto, productoBD);
@@ -71,20 +73,22 @@ public class ProductoServiceImpl implements ProductoService {
     private static void validateVersion(ProductoDto productDto, Producto productoBD) {
         if (productDto.getVersion() != null && !productoBD.getVersion().equals(productDto.getVersion())) {
             ProductoDto actual = ProductoDto.build().fromEntity(new ProductoDto(), productoBD);
-            throw new ConflictException("El producto ha sido modificado por otro administrador. Por favor, recargue la página", actual);
+            throw new ConflictException(
+                    "El producto ha sido modificado por otro administrador. Por favor, recargue la página", actual);
         }
     }
 
     private void asignarCategoria(ProductoDto productDto, Producto productoBD) {
 
         if (productDto.getCategoria() != null && productDto.getCategoria().getId() != null) {
-            Categoria nuevaCat = categoryRepository.findById(productDto.getCategoria().getId())
-                    .orElseThrow(() -> new ValidationException("Categoría no encontrada con ID: " + productDto.getCategoria().getId()));
+            Categoria nuevaCat = categoryRepository
+                    .findById(Objects.requireNonNull(productDto.getCategoria().getId(), "Category ID must not be null"))
+                    .orElseThrow(() -> new ValidationException(
+                            "Categoría no encontrada con ID: " + productDto.getCategoria().getId()));
             productoBD.setCategoria(nuevaCat);
 
         }
     }
-
 
     private static void validarCamposBaseProducto(ProductoDto dto) {
         ValidationUtil.isRequired(dto.getCodigo(), "El código del producto es obligatorio.");
@@ -96,12 +100,13 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public void delete(ProductoDto productoDto) {
+    @Transactional
+    public void delete(Integer id) {
 
-        if (productRepository.existsById(productoDto.getId())) {
-            productRepository.deleteById(productoDto.getId());
+        if (productRepository.existsById(Objects.requireNonNull(id, "Product ID must not be null"))) {
+            productRepository.deleteById(id);
         } else {
-            throw new ValidationException("No se encontró el producto con ID: " + productoDto.getId());
+            throw new ValidationException("No se encontró el producto con ID: " + id);
         }
 
     }
@@ -109,7 +114,7 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional(readOnly = true)
     public ProductoDto findById(Integer id) {
-        return productRepository.findById(id)
+        return productRepository.findById(Objects.requireNonNull(id, "Product ID must not be null"))
                 .map(product -> ProductoDto.build().fromEntity(product))
                 .orElseThrow(() -> new ValidationException("Producto no encontrado con ID: " + id));
     }

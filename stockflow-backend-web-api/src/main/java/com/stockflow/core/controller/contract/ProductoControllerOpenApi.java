@@ -34,8 +34,8 @@ public interface ProductoControllerOpenApi {
 
     @Operation(summary = "Eliminar un producto")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Producto eliminado con éxito")
-    @DeleteMapping(path = "/delete", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ApiResponse> delete(@RequestBody ProductoDto d);
+    @DeleteMapping(path = "/delete/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> delete(@PathVariable("id") Integer k);
 
     @Operation(summary = "Busca un producto por su código")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Buscar Producto por código con éxito")

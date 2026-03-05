@@ -6,4 +6,5 @@ import com.stockflow.core.utils.common.GenericCrud;
 
 public interface OrdenCompraService extends GenericCrud<OrdenCompraDto, OrdenCompra, Integer> {
 
+    String generateNumeroOrden();
 }

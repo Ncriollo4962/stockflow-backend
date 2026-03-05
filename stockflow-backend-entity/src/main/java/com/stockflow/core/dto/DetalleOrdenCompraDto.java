@@ -98,10 +98,14 @@ public class DetalleOrdenCompraDto extends RepresentationModel<DetalleOrdenCompr
             .cantidad(this.cantidad)
             .precioUnitario(this.precioUnitario)
             .ordenCompra(this.ordenCompra != null && this.ordenCompra.getId() != null
-                  ? OrdenCompra.builder().id(this.ordenCompra.getId()).build()
+                  ? OrdenCompra.builder()
+                  .id(this.ordenCompra.getId())
+                  .version(this.ordenCompra.getVersion()).build()
                   : null)
             .producto(this.producto != null && this.producto.getId() != null
-                  ? Producto.builder().id(this.producto.getId()).build()
+                  ? Producto.builder()
+                  .id(this.producto.getId())
+                  .version(this.producto.getVersion()).build()
                   : null)
             .build();
    }

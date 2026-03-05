@@ -41,7 +41,12 @@ public interface OrdenCompraControllerOpenApi {
 
     @Operation(summary = "Eliminar una orden de compra")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Orden de compra eliminada con éxito")
-    @DeleteMapping(path = "/delete", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ApiResponse> delete(@RequestBody OrdenCompraDto d);
+    @DeleteMapping(path = "/delete/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> delete(@PathVariable("id") Integer k);
+
+    @Operation(summary = "Genera un nuevo número de orden de compra")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = String.class)))
+    @GetMapping(path = "/generate-number", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> generateNumeroOrden();
 
 }

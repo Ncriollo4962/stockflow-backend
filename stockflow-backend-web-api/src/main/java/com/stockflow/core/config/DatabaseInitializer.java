@@ -228,7 +228,7 @@ public class DatabaseInitializer {
                     .usuario(usuarios.get(0)) // Admin
                     .fechaOrdenCompra(LocalDateTime.now().minusDays(i * 2))
                     .fechaEntrega(LocalDateTime.now().plusDays(5))
-                    .estado(EnumCodigoEstado.PENDIENTE_RECEPCION.name())
+                    .estado(EnumCodigoEstado.APERTURADA.name())
                     .totalCompra(new BigDecimal("1000.00"))
                     .notas("Nota de prueba " + (i + 1))
                     .detallesOrdenCompra(new ArrayList<>())

@@ -1,6 +1,7 @@
 package com.stockflow.core.service.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         validarCamposBaseUsuario(usuarioDto, false);
 
         Usuario user = usuarioDto.toEntity();
-   
+
         if (usuarioDto.getContrasena() != null) {
             user.setContrasena(passwordEncoder.encode(usuarioDto.getContrasena()));
         }
@@ -52,7 +53,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         validarCamposBaseUsuario(usuarioDto, true);
 
-        Usuario userToUpdate = userRepository.findById(usuarioDto.getId())
+        Usuario userToUpdate = userRepository
+                .findById(Objects.requireNonNull(usuarioDto.getId(), "User ID must not be null"))
                 .orElseThrow(() -> new ValidationException("Usuario no encontrado con ID: " + usuarioDto.getId()));
 
         validateVersion(usuarioDto, userToUpdate);
@@ -75,12 +77,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional
-    public void delete(UsuarioDto usuarioDto) {
+    public void delete(Integer id) {
 
-        if (userRepository.existsById(usuarioDto.getId())) {
-            userRepository.deleteById(usuarioDto.getId());
+        if (userRepository.existsById(Objects.requireNonNull(id, "User ID must not be null"))) {
+            userRepository.deleteById(id);
         } else {
-            throw new ValidationException("No se encontró el usuario con ID: " + usuarioDto.getId());
+            throw new ValidationException("No se encontró el usuario con ID: " + id);
         }
 
     }
@@ -108,7 +110,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public UsuarioDto findById(Integer id) {
-        return userRepository.findById(id)
+        return userRepository.findById(Objects.requireNonNull(id, "User ID must not be null"))
                 .map(user -> UsuarioDto.build().fromEntity(user))
                 .orElseThrow(() -> new ValidationException("Usuario no encontrado con ID: " + id));
     }

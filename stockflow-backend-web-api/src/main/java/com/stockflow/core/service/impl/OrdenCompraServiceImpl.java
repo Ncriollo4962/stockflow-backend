@@ -1,6 +1,8 @@
 package com.stockflow.core.service.impl;
 
+import java.time.Year;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,7 +12,6 @@ import com.stockflow.core.dto.DetalleOrdenCompraDto;
 import com.stockflow.core.dto.OrdenCompraDto;
 import com.stockflow.core.entity.DetalleOrdenCompra;
 import com.stockflow.core.entity.OrdenCompra;
-import com.stockflow.core.entity.Producto;
 import com.stockflow.core.entity.Proveedor;
 import com.stockflow.core.entity.Usuario;
 import com.stockflow.core.enums.EnumCodigoEstado;
@@ -23,7 +24,6 @@ import com.stockflow.core.repository.UsuarioRepository;
 import com.stockflow.core.service.OrdenCompraService;
 import com.stockflow.core.utils.ValidationUtil;
 
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,7 +34,6 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
     private final DetalleOrdenCompraRepository detalleOrdenCompraRepository;
     private final ProveedorRepository proveedorRepository;
     private final UsuarioRepository usuarioRepository;
-    private final EntityManager entityManager;
 
     @Override
     @Transactional
@@ -46,7 +45,7 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
         ordenCompra.setId(null);
         ordenCompra.setVersion(null);
         if (dto.getEstado() == null) {
-            ordenCompra.setEstado(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo());
+            ordenCompra.setEstado(EnumCodigoEstado.APERTURADA.getCodigo());
         }
         // Asociar Proveedor existente con validación
         asignarProveedor(dto, ordenCompra);
@@ -64,27 +63,25 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
     }
 
     private void saveDetallesOrdenCompra(OrdenCompraDto dto, OrdenCompra savedOrdenCompra) {
+        detalleOrdenCompraRepository.deleteByOrdenCompraId(savedOrdenCompra.getId());
         if (!CollectionUtils.isEmpty(dto.getDetallesOrdenCompra())) {
             List<DetalleOrdenCompra> detallesToSave = dto.getDetallesOrdenCompra().stream()
                     .map(DetalleOrdenCompraDto::toEntity)
                     .map(d -> {
                         validarCamposBaseDetalleOrdenCompra(DetalleOrdenCompraDto.build().fromEntity(d));
-                        d.setOrdenCompra(entityManager.getReference(OrdenCompra.class, savedOrdenCompra.getId()));
-
-                        if (d.getProducto() != null && d.getProducto().getId() != null) {
-                            d.setProducto(entityManager.getReference(Producto.class, d.getProducto().getId()));
-                        }
+                        d.setOrdenCompra(savedOrdenCompra);
+                        d.setProducto(d.getProducto());
                         return d;
                     })
                     .toList();
 
-            detalleOrdenCompraRepository.saveAll(detallesToSave);
+            detalleOrdenCompraRepository.saveAll(Objects.requireNonNull(detallesToSave, "Detalles de la orden de compra no pueden ser nulos"));
         }
     }
 
     private void asignarUsuario(OrdenCompraDto dto, OrdenCompra ordenCompra) {
         if (dto.getUsuario() != null && dto.getUsuario().getId() != null) {
-            Usuario usuario = usuarioRepository.findById(dto.getUsuario().getId())
+            Usuario usuario = usuarioRepository.findById(Objects.requireNonNull(dto.getUsuario().getId(), "Usuario ID must not be null"))
                     .orElseThrow(
                             () -> new ValidationException("Usuario no encontrado con ID: " + dto.getUsuario().getId()));
             ordenCompra.setUsuario(usuario);
@@ -93,7 +90,7 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
 
     private void asignarProveedor(OrdenCompraDto dto, OrdenCompra ordenCompra) {
         if (dto.getProveedor() != null && dto.getProveedor().getId() != null) {
-            Proveedor proveedor = proveedorRepository.findById(dto.getProveedor().getId())
+            Proveedor proveedor = proveedorRepository.findById(Objects.requireNonNull(dto.getProveedor().getId(), "Proveedor ID must not be null"))
                     .orElseThrow(() -> new ValidationException(
                             "Proveedor no encontrado con ID: " + dto.getProveedor().getId()));
             ordenCompra.setProveedor(proveedor);
@@ -105,7 +102,7 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
     public OrdenCompraDto update(OrdenCompraDto dto) {
         validarCamposBaseOrdenCompra(dto);
 
-        OrdenCompra ordenCompraBD = ordenCompraRepository.findById(dto.getId())
+        OrdenCompra ordenCompraBD = ordenCompraRepository.findById(Objects.requireNonNull(dto.getId(), "Orden de compra ID must not be null"))
                 .orElseThrow(() -> new ValidationException("Orden de compra no encontrada con ID: " + dto.getId()));
 
         validateVersion(dto, ordenCompraBD);
@@ -131,9 +128,10 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
 
     @Override
     @Transactional
-    public void delete(OrdenCompraDto d) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+    public void delete(Integer d) {
+        if (d != null) {
+            ordenCompraRepository.deleteById(d);
+        }
     }
 
     @Override
@@ -149,9 +147,30 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
     @Override
     @Transactional(readOnly = true)
     public OrdenCompraDto findById(Integer id) {
-        return ordenCompraRepository.findById(id)
+        return ordenCompraRepository.findById(Objects.requireNonNull(id, "Orden de compra ID must not be null"))
                 .map(orden -> OrdenCompraDto.build().fromEntity(orden))
                 .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String generateNumeroOrden() {
+        String year = String.valueOf(Year.now().getValue());
+        String prefix = "OC-" + year + "-";
+
+        return ordenCompraRepository.findTopByOrderByIdDesc()
+                .map(OrdenCompra::getNumeroOrden)
+                .filter(last -> last != null && last.startsWith(prefix))
+                .map(last -> {
+                    try {
+                        String[] parts = last.split("-");
+                        long correlativo = Long.parseLong(parts[2]);
+                        return String.format("%s%06d", prefix, correlativo + 1);
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        return prefix + "000001";
+                    }
+                })
+                .orElse(prefix + "000001");
     }
 
     private static void validarCamposBaseOrdenCompra(OrdenCompraDto dto) {
@@ -177,7 +196,8 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
         if (ordenCompraDto.getVersion() != null && !ordenCompraBD.getVersion().equals(ordenCompraDto.getVersion())) {
             OrdenCompraDto actual = OrdenCompraDto.build().fromEntity(new OrdenCompraDto(), ordenCompraBD);
             throw new ConflictException(
-                    "La orden de compra ha sido modificado por otro administrador. Por favor, recargue la página",
+                    "La orden de compra ha sido modificado por otro administrador. Versión enviada: "
+                            + ordenCompraDto.getVersion() + ", Versión actual BD: " + ordenCompraBD.getVersion(),
                     actual);
         }
     }

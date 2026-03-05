@@ -29,7 +29,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
-    public void delete(ProveedorDto d) {
+    public void delete(Integer d) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }

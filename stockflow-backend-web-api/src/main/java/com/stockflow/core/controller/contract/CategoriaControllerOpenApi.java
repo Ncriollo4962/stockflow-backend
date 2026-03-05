@@ -35,6 +35,6 @@ public interface CategoriaControllerOpenApi {
 
     @Operation(summary = "Elimina una categoría")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Categoría eliminada con éxito")
-    @DeleteMapping(path = "/delete", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ApiResponse> delete(@RequestBody CategoriaDto d);
+    @DeleteMapping(path = "/delete/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> delete(@PathVariable("id") Integer k);
 }

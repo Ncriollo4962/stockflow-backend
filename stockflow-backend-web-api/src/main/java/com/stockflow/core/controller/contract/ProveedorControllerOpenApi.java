@@ -43,6 +43,6 @@ public interface ProveedorControllerOpenApi {
 
     @Operation(summary = "Eliminar un proveedor")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Proveedor eliminado con éxito")
-    @DeleteMapping(path = "/delete", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ApiResponse> delete(@RequestBody ProveedorDto d);
+    @DeleteMapping(path = "/delete/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> delete(@PathVariable("id") Integer k);
 }

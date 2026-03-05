@@ -34,8 +34,8 @@ public interface UsuarioControllerOpenApi {
 
     @Operation(summary = "Eliminar un usuario")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Usuario eliminado con éxito")
-    @DeleteMapping(path = "/delete", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ApiResponse> delete(@RequestBody UsuarioDto d);
+    @DeleteMapping(path = "/delete/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> delete(@PathVariable("id") Integer k);
 
     @Operation(summary = "Busca un usuario por su nombre de usuario (email)")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Buscar Usuario por email con éxito")

@@ -20,7 +20,7 @@ public class DetalleOrdenCompraServiceImpl implements DetalleOrdenCompraService 
     }
 
     @Override
-    public void delete(DetalleOrdenCompraDto d) {
+    public void delete(Integer d) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }
