@@ -49,4 +49,9 @@ public interface OrdenCompraControllerOpenApi {
     @GetMapping(path = "/generate-number", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> generateNumeroOrden();
 
+    @Operation(summary = "Lista las órdenes de compra pendientes de recepción")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrdenCompraDto.class)))
+    @GetMapping(path = "/pendientes-recepcion", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> findPendientesRecepcion();
+
 }

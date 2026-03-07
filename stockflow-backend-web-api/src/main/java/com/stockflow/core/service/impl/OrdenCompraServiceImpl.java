@@ -130,8 +130,33 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
     @Transactional
     public void delete(Integer d) {
         if (d != null) {
-            ordenCompraRepository.deleteById(d);
+            detalleOrdenCompraRepository.deleteByOrdenCompraId(d);
+            
+            OrdenCompra ordenCompra = ordenCompraRepository.findById(d)
+                    .orElseThrow(() -> new ValidationException("Orden de compra no encontrada"));
+            ordenCompra.setEstado(EnumCodigoEstado.ANULADA.getCodigo());
+            ordenCompraRepository.save(ordenCompra);
         }
+    }
+
+    @Override
+    @Transactional
+    public void deleteAll(List<Integer> ids) {
+        if (ids != null) {
+            ids.forEach(this::delete);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDto> findPendientesRecepcion() {
+        List<String> estados = List.of(
+            EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo()
+        );
+        OrdenCompraDto template = OrdenCompraDto.build();
+        return ordenCompraRepository.findByEstadoIn(estados).stream()
+                .map(orden -> OrdenCompraDto.build().fromEntity(template, orden))
+                .toList();
     }
 
     @Override

@@ -17,6 +17,9 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Intege
 
     Long countByEstado(String estado);
 
+    @Query("SELECT o FROM OrdenCompra o WHERE o.estado IN :estados")
+    List<OrdenCompra> findByEstadoIn(@Param("estados") List<String> estados);
+
     @Query("SELECT FUNCTION('MONTH', o.fechaOrdenCompra) as mes, SUM(o.totalCompra) as total FROM OrdenCompra o WHERE FUNCTION('YEAR', o.fechaOrdenCompra) = :anio GROUP BY FUNCTION('MONTH', o.fechaOrdenCompra) ORDER BY FUNCTION('MONTH', o.fechaOrdenCompra)")
     List<Map<String, Object>> getComprasPorMes(@Param("anio") Integer anio);
 }

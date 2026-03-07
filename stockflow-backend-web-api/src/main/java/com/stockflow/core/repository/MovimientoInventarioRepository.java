@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.stockflow.core.entity.MovimientoInventario;
 
 @Repository
-public interface MovimientoInventarioRepository extends JpaRepository<MovimientoInventario, Long> {
+public interface MovimientoInventarioRepository extends JpaRepository<MovimientoInventario, Integer> {
     
     @Query("SELECT FUNCTION('MONTH', m.fechaMovimiento) as mes, " +
            "SUM(CASE WHEN m.tipoMovimiento = 'ENTRADA' THEN m.cantidad ELSE 0 END) as totalEntradas, " +

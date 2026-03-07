@@ -129,11 +129,11 @@ public class DatabaseInitializer {
         log.info("Creando categorias...");
         List<Categoria> categorias = new ArrayList<>();
         
-        categorias.add(Categoria.builder().codigo("CAT001").nombre("Electrónica").descripcion("Dispositivos electrónicos").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT002").nombre("Hogar").descripcion("Artículos para el hogar").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT003").nombre("Ropa").descripcion("Prendas de vestir").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT004").nombre("Juguetes").descripcion("Juguetes para niños").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT005").nombre("Deportes").descripcion("Artículos deportivos").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT001").nombre("Herramientas Eléctricas").descripcion("Taladros, amoladoras, sierras").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT002").nombre("Construcción").descripcion("Cementos, agregados, ladrillos").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT003").nombre("Gasfitería").descripcion("Tubos, válvulas, accesorios").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT004").nombre("Electricidad").descripcion("Cables, interruptores, focos").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT005").nombre("Pinturas").descripcion("Pinturas, solventes, brochas").estado(true).build());
 
         categoriaRepository.saveAll(categorias);
     }
@@ -172,11 +172,11 @@ public class DatabaseInitializer {
         List<Categoria> categorias = categoriaRepository.findAll();
         List<Producto> productos = new ArrayList<>();
 
-        productos.add(Producto.builder().codigo("PROD001").nombre("Laptop Gamer").descripcion("Laptop de alto rendimiento").categoria(categorias.get(0)).precioCosto(new BigDecimal("1000.00")).precioVenta(new BigDecimal("1500.00")).cantidadMinima(5).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD002").nombre("Smartphone X").descripcion("Último modelo").categoria(categorias.get(0)).precioCosto(new BigDecimal("500.00")).precioVenta(new BigDecimal("800.00")).cantidadMinima(10).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD003").nombre("Sofá 3 Cuerpos").descripcion("Sofá cómodo").categoria(categorias.get(1)).precioCosto(new BigDecimal("300.00")).precioVenta(new BigDecimal("600.00")).cantidadMinima(2).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD004").nombre("Camiseta Polo").descripcion("Camiseta algodón").categoria(categorias.get(2)).precioCosto(new BigDecimal("10.00")).precioVenta(new BigDecimal("25.00")).cantidadMinima(20).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD005").nombre("Pelota Fútbol").descripcion("Pelota oficial").categoria(categorias.get(4)).precioCosto(new BigDecimal("15.00")).precioVenta(new BigDecimal("30.00")).cantidadMinima(15).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD001").nombre("Taladro Percutor 1/2\"").descripcion("Taladro profesional 750W").categoria(categorias.get(0)).precioCosto(new BigDecimal("180.00")).precioVenta(new BigDecimal("250.00")).cantidadMinima(5).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD002").nombre("Cemento Portland 42.5kg").descripcion("Cemento Tipo I para construcción").categoria(categorias.get(1)).precioCosto(new BigDecimal("22.00")).precioVenta(new BigDecimal("28.00")).cantidadMinima(50).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD003").nombre("Tubo PVC Desagüe 4\" x 3m").descripcion("Tubo para desagüe clase pesada").categoria(categorias.get(2)).precioCosto(new BigDecimal("15.00")).precioVenta(new BigDecimal("25.00")).cantidadMinima(20).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD004").nombre("Cable Eléctrico #12 AWG").descripcion("Rollo de 100m Indeco").categoria(categorias.get(3)).precioCosto(new BigDecimal("150.00")).precioVenta(new BigDecimal("210.00")).cantidadMinima(10).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD005").nombre("Pintura Látex Blanca 1GL").descripcion("Pintura lavable mate interior").categoria(categorias.get(4)).precioCosto(new BigDecimal("45.00")).precioVenta(new BigDecimal("65.00")).cantidadMinima(15).estado(true).build());
 
         productoRepository.saveAll(productos);
     }
@@ -228,7 +228,7 @@ public class DatabaseInitializer {
                     .usuario(usuarios.get(0)) // Admin
                     .fechaOrdenCompra(LocalDateTime.now().minusDays(i * 2))
                     .fechaEntrega(LocalDateTime.now().plusDays(5))
-                    .estado(EnumCodigoEstado.APERTURADA.name())
+                    .estado(EnumCodigoEstado.APERTURADA.getCodigo())
                     .totalCompra(new BigDecimal("1000.00"))
                     .notas("Nota de prueba " + (i + 1))
                     .detallesOrdenCompra(new ArrayList<>())
@@ -273,7 +273,7 @@ public class DatabaseInitializer {
                     .clienteTelefono("99988877" + i)
                     .direccion("Dirección de entrega " + (i + 1))
                     .fechaVenta(LocalDateTime.now().minusDays(i))
-                    .estado(EnumCodigoEstado.PENDIENTE_DESPACHO.name())
+                    .estado(EnumCodigoEstado.APERTURADA.getCodigo())
                     .totalVenta(BigDecimal.ZERO)
                     .detalleOrdenVenta(new ArrayList<>())
                     .build();

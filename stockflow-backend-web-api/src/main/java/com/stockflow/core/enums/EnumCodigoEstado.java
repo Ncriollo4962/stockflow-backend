@@ -1,5 +1,9 @@
 package com.stockflow.core.enums;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public enum EnumCodigoEstado {
     /* -------------------------------------------------------------------------- */
     /* Estados de la orden de compra */
@@ -17,6 +21,15 @@ public enum EnumCodigoEstado {
     /* Estados de la orden de venta */
     /* -------------------------------------------------------------------------- */
     PENDIENTE_DESPACHO("Pendiente Despacho"),
+
+    /* -------------------------------------------------------------------------- */
+    /* Estados de movimiento de inventario */
+    /* -------------------------------------------------------------------------- */
+    ENTRADA("Entrada"),
+    SALIDA("Salida"),
+    TRANSFERENCIA("Transferencia Mercaderia"),
+    AJUSTE_SALIDA_INVENTARIO("Ajustes Salida Inventario Mensual"),
+    AJUSTE_ENTRADA_INVENTARIO("Ajustes Entrada Inventario Mensual"),
     ;
 
     private final String codigo;
@@ -27,6 +40,10 @@ public enum EnumCodigoEstado {
 
     public String getCodigo() {
         return this.codigo;
+    }
+
+    public List<String> getCodigos() {
+        return Arrays.stream(values()).map(EnumCodigoEstado::getCodigo).toList();
     }
 
 }

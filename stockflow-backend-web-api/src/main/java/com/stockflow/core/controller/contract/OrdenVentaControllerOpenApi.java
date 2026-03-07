@@ -48,5 +48,10 @@ public interface OrdenVentaControllerOpenApi {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = String.class)))
     @GetMapping(path = "/generate-number", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> generateNumeroOrden();
+    
+    @Operation(summary = "Lista las órdenes de venta pendientes de despacho")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrdenVentaDto.class)))
+    @GetMapping(path = "/pendientes-despacho", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> findPendientesDespacho();
 
 }

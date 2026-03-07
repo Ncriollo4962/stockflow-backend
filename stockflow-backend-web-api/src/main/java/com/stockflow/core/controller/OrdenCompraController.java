@@ -53,4 +53,9 @@ public class OrdenCompraController extends GenericController<OrdenCompraDto, Ord
     public ResponseEntity<ApiResponse> generateNumeroOrden() {
         return ResponseEntity.ok(ApiResponse.ok("Número de orden generado", ordenCompraService.generateNumeroOrden()));
     }
+
+    @Override
+    public ResponseEntity<ApiResponse> findPendientesRecepcion() {
+        return ResponseEntity.ok(ApiResponse.ok("Listado de ordenes de compra pendientes de recepción", ordenCompraService.findPendientesRecepcion()));
+    }
 }
