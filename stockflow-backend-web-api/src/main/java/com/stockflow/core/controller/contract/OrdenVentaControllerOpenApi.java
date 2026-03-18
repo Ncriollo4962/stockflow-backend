@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.stockflow.core.dto.OrdenVentaDto;
 import com.stockflow.core.utils.common.ApiResponse;
@@ -53,5 +54,13 @@ public interface OrdenVentaControllerOpenApi {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrdenVentaDto.class)))
     @GetMapping(path = "/pendientes-despacho", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ApiResponse> findPendientesDespacho();
+
+    @Operation(summary = "Cambia el estado de una orden de venta")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Estado actualizado con éxito")
+    @PutMapping(path = "/{id}/estado", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ApiResponse> cambiarEstado(
+            @PathVariable("id") Integer id,
+            @RequestParam("estado") String estado
+    );
 
 }

@@ -160,6 +160,20 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
     }
 
     @Override
+    @Transactional
+    public OrdenCompraDto cambiarEstado(Integer id, String estado) {
+        ValidationUtil.isRequired(id, "El ID de orden de compra es requerido.");
+        ValidationUtil.isRequired(estado, "El estado es requerido.");
+
+        OrdenCompra ordenCompra = ordenCompraRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("Orden de compra no encontrada con ID: " + id));
+
+        ordenCompra.setEstado(estado);
+        OrdenCompra saved = ordenCompraRepository.saveAndFlush(ordenCompra);
+        return OrdenCompraDto.build().fromEntity(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<OrdenCompraDto> findAll() {
 

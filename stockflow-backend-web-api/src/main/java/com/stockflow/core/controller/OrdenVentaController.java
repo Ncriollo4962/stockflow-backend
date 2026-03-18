@@ -58,4 +58,9 @@ public class OrdenVentaController extends GenericController<OrdenVentaDto, Orden
     public ResponseEntity<ApiResponse> findPendientesDespacho() {
         return ResponseEntity.ok(ApiResponse.ok("Listado de ordenes de venta pendientes de despacho", ordenVentaService.findPendientesDespacho()));
     }
+
+    @Override
+    public ResponseEntity<ApiResponse> cambiarEstado(Integer id, String estado) {
+        return ResponseEntity.ok(ApiResponse.ok("Estado actualizado", ordenVentaService.cambiarEstado(id, estado)));
+    }
 }

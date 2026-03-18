@@ -143,11 +143,12 @@ public class DatabaseInitializer {
         log.info("Creando ubicaciones...");
         List<Ubicacion> ubicaciones = new ArrayList<>();
 
-        ubicaciones.add(Ubicacion.builder().codigo("UBI001").nombre("Almacén Central").descripcion("Almacén principal").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI002").nombre("Tienda Norte").descripcion("Sucursal Norte").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI003").nombre("Tienda Sur").descripcion("Sucursal Sur").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI004").nombre("Depósito 1").descripcion("Depósito de respaldo").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI005").nombre("Estante A").descripcion("Estantería A en central").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI001").nombre("Pasillo A Anaquel A1 Estante A1-01").descripcion("Pasillo principal").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI002").nombre("Pasillo B Anaquel B2 Estante B2-01").descripcion("Pasillo secundario").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI003").nombre("Pasillo A Anaquel A1 Estante A1-02").descripcion("Anaquel del Pasillo A").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI004").nombre("Pasillo B Anaquel B2 Estante B2-02").descripcion("Anaquel del Pasillo B").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI005").nombre("Pasillo A Anaquel A1 Estante A1-03").descripcion("Estante del Anaquel 1").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI006").nombre("Pasillo B Anaquel B2 Estante B2-03").descripcion("Estante del Anaquel 2").estado(true).build());
 
         ubicacionRepository.saveAll(ubicaciones);
     }

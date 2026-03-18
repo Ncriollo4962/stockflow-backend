@@ -131,6 +131,20 @@ public class OrdenVentaServiceImpl implements OrdenVentaService {
     }
 
     @Override
+    @Transactional
+    public OrdenVentaDto cambiarEstado(Integer id, String estado) {
+        ValidationUtil.isRequired(id, "El ID de orden de venta es requerido.");
+        ValidationUtil.isRequired(estado, "El estado es requerido.");
+
+        OrdenVenta ordenVenta = ordenVentaRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("Orden de venta no encontrada con ID: " + id));
+
+        ordenVenta.setEstado(estado);
+        OrdenVenta saved = ordenVentaRepository.saveAndFlush(ordenVenta);
+        return OrdenVentaDto.build().fromEntity(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<OrdenVentaDto> findAll() {
         OrdenVentaDto template = OrdenVentaDto.build();

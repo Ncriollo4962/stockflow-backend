@@ -156,7 +156,12 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
             EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO
         );
 
-        if (EnumCodigoEstado.ENTRADA.name().equalsIgnoreCase(tipo) || EnumCodigoEstado.ENTRADA.getCodigo().equalsIgnoreCase(tipo)) {
+        List<EnumCodigoEstado> entradas = Arrays.asList(
+            EnumCodigoEstado.ENTRADA, 
+            EnumCodigoEstado.AJUSTE_ENTRADA_INVENTARIO
+        );
+
+        if (entradas.stream().anyMatch(e -> e.name().equalsIgnoreCase(tipo) || e.getCodigo().equalsIgnoreCase(tipo))) {
             multiplier = 1;
         } else if (salidas.stream().anyMatch(e -> e.name().equalsIgnoreCase(tipo) || e.getCodigo().equalsIgnoreCase(tipo))) {
             multiplier = -1;

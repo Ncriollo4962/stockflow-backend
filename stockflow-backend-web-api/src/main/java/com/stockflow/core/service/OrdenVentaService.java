@@ -11,4 +11,6 @@ public interface OrdenVentaService extends GenericCrud<OrdenVentaDto, OrdenVenta
     String generateNumeroOrden();
     
     List<OrdenVentaDto> findPendientesDespacho();
+
+    OrdenVentaDto cambiarEstado(Integer id, String estado);
 }

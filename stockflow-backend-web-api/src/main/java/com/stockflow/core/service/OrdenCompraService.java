@@ -11,4 +11,6 @@ public interface OrdenCompraService extends GenericCrud<OrdenCompraDto, OrdenCom
     String generateNumeroOrden();
     
     List<OrdenCompraDto> findPendientesRecepcion();
+
+    OrdenCompraDto cambiarEstado(Integer id, String estado);
 }
