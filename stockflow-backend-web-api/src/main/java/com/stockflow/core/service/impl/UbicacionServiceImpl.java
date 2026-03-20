@@ -77,6 +77,7 @@ public class UbicacionServiceImpl implements UbicacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UbicacionDto> findAll() {
         return ubicacionRepository.findAll().stream()
                 .map(e -> UbicacionDto.build().fromEntity(e))
@@ -84,6 +85,7 @@ public class UbicacionServiceImpl implements UbicacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UbicacionDto findById(Integer id) {
         return ubicacionRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .map(e -> UbicacionDto.build().fromEntity(e))

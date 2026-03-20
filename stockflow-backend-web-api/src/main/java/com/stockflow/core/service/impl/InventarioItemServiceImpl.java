@@ -170,6 +170,7 @@ public class InventarioItemServiceImpl implements InventarioItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<InventarioItemDto> findAll() {
         return inventarioItemRepository.findAll().stream()
                 .map(e -> InventarioItemDto.build().fromEntity(e))
@@ -177,6 +178,7 @@ public class InventarioItemServiceImpl implements InventarioItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public InventarioItemDto findById(Integer id) {
         return inventarioItemRepository.findById(id)
                 .map(e -> InventarioItemDto.build().fromEntity(e))

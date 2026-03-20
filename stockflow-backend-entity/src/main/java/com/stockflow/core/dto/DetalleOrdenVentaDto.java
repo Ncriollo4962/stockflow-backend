@@ -31,6 +31,10 @@ public class DetalleOrdenVentaDto extends RepresentationModel<DetalleOrdenVentaD
    private BigDecimal precioUnitario;
    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    private BigDecimal subtotal;
+   private Integer cantidadDespachada;
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   private Integer cantidadPendiente;
+   private String estadoDetalle;
 
    // --- Banderas de control (Template) ---
    @JsonIgnore
@@ -45,6 +49,15 @@ public class DetalleOrdenVentaDto extends RepresentationModel<DetalleOrdenVentaD
    @JsonIgnore
    @Builder.Default
    private boolean defSubtotal = true;
+   @JsonIgnore
+   @Builder.Default
+   private boolean defCantidadDespachada = true;
+   @JsonIgnore
+   @Builder.Default
+   private boolean defCantidadPendiente = true;
+   @JsonIgnore
+   @Builder.Default
+   private boolean defEstadoDetalle = true;
 
    @JsonIgnore
    @Builder.Default
@@ -76,6 +89,12 @@ public class DetalleOrdenVentaDto extends RepresentationModel<DetalleOrdenVentaD
          dto.setPrecioUnitario(entity.getPrecioUnitario());
       if (template.isDefSubtotal())
          dto.setSubtotal(entity.getSubtotal());
+      if (template.isDefCantidadDespachada())
+         dto.setCantidadDespachada(entity.getCantidadDespachada());
+      if (template.isDefCantidadPendiente())
+         dto.setCantidadPendiente(entity.getCantidadPendiente());
+      if (template.isDefEstadoDetalle())
+         dto.setEstadoDetalle(entity.getEstadoDetalle());
 
       if (template.getDefOrdenVenta() != null && entity.getOrdenVenta() != null) {
          dto.setOrdenVenta(OrdenVentaDto.build().fromEntity(template.getDefOrdenVenta(), entity.getOrdenVenta()));
@@ -93,6 +112,8 @@ public class DetalleOrdenVentaDto extends RepresentationModel<DetalleOrdenVentaD
             .id(this.id)
             .cantidad(this.cantidad)
             .precioUnitario(this.precioUnitario)
+            .cantidadDespachada(this.cantidadDespachada != null ? this.cantidadDespachada : 0)
+            .estadoDetalle(this.estadoDetalle != null ? this.estadoDetalle : "Pendiente Despacho")
             .ordenVenta(this.ordenVenta != null && this.ordenVenta.getId() != null
                   ? OrdenVenta.builder().id(this.ordenVenta.getId()).version(this.ordenVenta.getVersion()).build()
                   : null)

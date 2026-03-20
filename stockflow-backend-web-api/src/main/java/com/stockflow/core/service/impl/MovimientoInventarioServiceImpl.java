@@ -132,6 +132,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MovimientoInventarioDto> findAll() {
         return movimientoInventarioRepository.findAll().stream()
                 .map(e -> MovimientoInventarioDto.build().fromEntity(e))
@@ -139,6 +140,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MovimientoInventarioDto findById(Integer id) {
         return movimientoInventarioRepository.findById(id)
                 .map(e -> MovimientoInventarioDto.build().fromEntity(e))

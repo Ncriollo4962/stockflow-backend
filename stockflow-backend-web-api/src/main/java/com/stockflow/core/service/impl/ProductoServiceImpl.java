@@ -120,6 +120,7 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductoDto> findAll() {
 
         ProductoDto template = ProductoDto.build();

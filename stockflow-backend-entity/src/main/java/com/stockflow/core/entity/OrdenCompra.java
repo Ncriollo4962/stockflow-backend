@@ -52,9 +52,6 @@ public class OrdenCompra {
     @Column(length = 350)
     private String notas;
 
-    @Column(name = "fecha_creacion", insertable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
-
     @Version
     private Integer version;
 

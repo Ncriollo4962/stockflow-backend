@@ -116,6 +116,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UsuarioDto findByNameUser(String email) {
         return userRepository.findByEmail(email)
                 .map(user -> UsuarioDto.build().fromEntity(user))

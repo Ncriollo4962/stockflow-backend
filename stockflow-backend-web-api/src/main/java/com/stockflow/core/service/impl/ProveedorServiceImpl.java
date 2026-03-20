@@ -3,6 +3,7 @@ package com.stockflow.core.service.impl;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.stockflow.core.dto.ProveedorDto;
 import com.stockflow.core.repository.ProveedorRepository;
@@ -35,6 +36,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProveedorDto> findAll() {
         ProveedorDto template = ProveedorDto.build();
         return proveedorRepository.findAll().stream()

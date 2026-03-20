@@ -31,6 +31,10 @@ public class DetalleOrdenCompraDto extends RepresentationModel<DetalleOrdenCompr
    private BigDecimal precioUnitario;
    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    private BigDecimal subtotal;
+   private Integer cantidadRecibida;
+   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   private Integer cantidadPendiente;
+   private String estadoDetalle;
 
    // --- Banderas de control (Template) ---
    @JsonIgnore
@@ -45,6 +49,15 @@ public class DetalleOrdenCompraDto extends RepresentationModel<DetalleOrdenCompr
    @JsonIgnore
    @Builder.Default
    private boolean defSubtotal = true;
+   @JsonIgnore
+   @Builder.Default
+   private boolean defCantidadRecibida = true;
+   @JsonIgnore
+   @Builder.Default
+   private boolean defCantidadPendiente = true;
+   @JsonIgnore
+   @Builder.Default
+   private boolean defEstadoDetalle = true;
 
    @JsonIgnore
    @Builder.Default
@@ -76,6 +89,12 @@ public class DetalleOrdenCompraDto extends RepresentationModel<DetalleOrdenCompr
          dto.setPrecioUnitario(entity.getPrecioUnitario());
       if (template.isDefSubtotal())
          dto.setSubtotal(entity.getSubtotal());
+      if (template.isDefCantidadRecibida())
+         dto.setCantidadRecibida(entity.getCantidadRecibida());
+      if (template.isDefCantidadPendiente())
+         dto.setCantidadPendiente(entity.getCantidadPendiente());
+      if (template.isDefEstadoDetalle())
+         dto.setEstadoDetalle(entity.getEstadoDetalle());
 
       if (template.getDefOrdenCompra() != null && entity.getOrdenCompra() != null) {
          // Evitar recursión infinita: La orden dentro del detalle NO debe traer sus detalles de vuelta
@@ -97,6 +116,8 @@ public class DetalleOrdenCompraDto extends RepresentationModel<DetalleOrdenCompr
             .id(this.id)
             .cantidad(this.cantidad)
             .precioUnitario(this.precioUnitario)
+            .cantidadRecibida(this.cantidadRecibida != null ? this.cantidadRecibida : 0)
+            .estadoDetalle(this.estadoDetalle != null ? this.estadoDetalle : "Pendiente Recepción")
             .ordenCompra(this.ordenCompra != null && this.ordenCompra.getId() != null
                   ? OrdenCompra.builder()
                   .id(this.ordenCompra.getId())

@@ -9,7 +9,6 @@ import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockflow.core.entity.EntityDto;
 import com.stockflow.core.entity.OrdenCompra;
 import com.stockflow.core.entity.Proveedor;
@@ -38,8 +37,6 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
    private UsuarioDto usuario;
    private LocalDateTime fechaOrdenCompra;
    private LocalDateTime fechaEntrega;
-   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   private LocalDateTime fechaCreacion;
    private String estado;
    private BigDecimal totalCompra;
    private String notas;
@@ -71,9 +68,6 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
    @JsonIgnore
    @Builder.Default
    private boolean defVersion = true;
-   @JsonIgnore
-   @Builder.Default
-   private boolean defFechaCreacion = true;
    @JsonIgnore
    @Builder.Default
    private ProveedorDto defProveedor = ProveedorDto.build();
@@ -115,8 +109,6 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
          dto.setNotas(entity.getNotas());
       if (template.isDefVersion())
          dto.setVersion(entity.getVersion());
-      if (template.isDefFechaCreacion())
-         dto.setFechaCreacion(entity.getFechaCreacion());
 
       if (template.getDefProveedor() != null && entity.getProveedor() != null) {
          dto.setProveedor(ProveedorDto.build().fromEntity(template.getDefProveedor(), entity.getProveedor()));

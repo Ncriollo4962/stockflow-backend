@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,7 @@ public class DatabaseInitializer {
     private final PasswordEncoder passwordEncoder;
 
     @Bean
+    @ConditionalOnProperty(prefix = "stockflow.db", name = "initializer.enabled", havingValue = "true")
     @Transactional
     public CommandLineRunner initDatabase() {
         return args -> {
@@ -52,7 +54,7 @@ public class DatabaseInitializer {
             initInventario();
             initOrdenesCompra();
             initOrdenesVenta();
-            initMovimientos();
+            // initMovimientos();
 
             log.info("Carga de datos de prueba finalizada.");
         };
@@ -224,7 +226,7 @@ public class DatabaseInitializer {
         int cantidad = Math.min(5, Math.min(proveedores.size(), Math.min(usuarios.size(), productos.size())));
         for (int i = 0; i < cantidad; i++) {
             OrdenCompra orden = OrdenCompra.builder()
-                    .numeroOrden("OC-2024-00" + (i + 1))
+                    .numeroOrden("OC-2026-00" + (i + 1))
                     .proveedor(proveedores.get(i))
                     .usuario(usuarios.get(0)) // Admin
                     .fechaOrdenCompra(LocalDateTime.now().minusDays(i * 2))
@@ -241,11 +243,12 @@ public class DatabaseInitializer {
                     .producto(productos.get(i))
                     .cantidad(10)
                     .precioUnitario(productos.get(i).getPrecioCosto())
-                    .subtotal(productos.get(i).getPrecioCosto().multiply(new BigDecimal("10")))
+                    .cantidadRecibida(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo())
                     .build();
             
             orden.getDetallesOrdenCompra().add(detalle);
-            orden.setTotalCompra(detalle.getSubtotal()); // Actualizar total
+            orden.setTotalCompra(productos.get(i).getPrecioCosto().multiply(new BigDecimal("10"))); // Actualizar total
             
             ordenes.add(orden);
         }
@@ -267,7 +270,7 @@ public class DatabaseInitializer {
         int cantidad = Math.min(5, productos.size());
         for (int i = 0; i < cantidad; i++) {
             OrdenVenta orden = OrdenVenta.builder()
-                    .numeroOrden("OV-2024-00" + (i + 1))
+                    .numeroOrden("OV-2026-00" + (i + 1))
                     .usuario(usuarios.get(1)) // Vendedor
                     .clienteNombre("Cliente " + (i + 1))
                     .clienteEmail("cliente" + (i + 1) + "@email.com")
@@ -285,11 +288,12 @@ public class DatabaseInitializer {
                     .producto(productos.get(i))
                     .cantidad(2)
                     .precioUnitario(productos.get(i).getPrecioVenta())
-                    .subtotal(productos.get(i).getPrecioVenta().multiply(new BigDecimal("2")))
+                    .cantidadDespachada(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo())
                     .build();
             
             orden.getDetalleOrdenVenta().add(detalle);
-            orden.setTotalVenta(detalle.getSubtotal());
+            orden.setTotalVenta(productos.get(i).getPrecioVenta().multiply(new BigDecimal("2")));
 
             ordenes.add(orden);
         }
@@ -297,46 +301,46 @@ public class DatabaseInitializer {
         ordenVentaRepository.saveAll(ordenes);
     }
     
-    private void initMovimientos() {
-        log.info("Creando movimientos de inventario...");
-        List<Producto> productos = productoRepository.findAll();
-        List<Usuario> usuarios = usuarioRepository.findAll();
-        List<Ubicacion> ubicaciones = ubicacionRepository.findAll();
-        List<MovimientoInventario> movimientos = new ArrayList<>();
+    // private void initMovimientos() {
+    //     log.info("Creando movimientos de inventario...");
+    //     List<Producto> productos = productoRepository.findAll();
+    //     List<Usuario> usuarios = usuarioRepository.findAll();
+    //     List<Ubicacion> ubicaciones = ubicacionRepository.findAll();
+    //     List<MovimientoInventario> movimientos = new ArrayList<>();
         
-        if (productos.isEmpty() || usuarios.size() < 2 || ubicaciones.isEmpty()) {
-            log.warn("No se puede inicializar movimientos: faltan dependencias.");
-            return;
-        }
+    //     if (productos.isEmpty() || usuarios.size() < 2 || ubicaciones.isEmpty()) {
+    //         log.warn("No se puede inicializar movimientos: faltan dependencias.");
+    //         return;
+    //     }
 
-        int cantidad = Math.min(5, Math.min(productos.size(), ubicaciones.size()));
-        // Simular movimientos en diferentes meses para el gráfico
-        for (int i = 0; i < cantidad; i++) {
-            // Entrada
-            movimientos.add(MovimientoInventario.builder()
-                    .producto(productos.get(i))
-                    .usuario(usuarios.get(0))
-                    .ubicacion(ubicaciones.get(i)) // Asignar ubicación
-                    .tipoMovimiento("ENTRADA")
-                    .cantidad(50)
-                    .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
-                    .motivo("Compra inicial")
-                    .referencia("REF-ENT-" + i)
-                    .build());
+    //     int cantidad = Math.min(5, Math.min(productos.size(), ubicaciones.size()));
+    //     // Simular movimientos en diferentes meses para el gráfico
+    //     for (int i = 0; i < cantidad; i++) {
+    //         // Entrada
+    //         movimientos.add(MovimientoInventario.builder()
+    //                 .producto(productos.get(i))
+    //                 .usuario(usuarios.get(0))
+    //                 .ubicacion(ubicaciones.get(i)) // Asignar ubicación
+    //                 .tipoMovimiento("ENTRADA")
+    //                 .cantidad(50)
+    //                 .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
+    //                 .motivo("Compra inicial")
+    //                 .referencia("REF-ENT-" + i)
+    //                 .build());
             
-            // Salida
-            movimientos.add(MovimientoInventario.builder()
-                    .producto(productos.get(i))
-                    .usuario(usuarios.get(1))
-                    .ubicacion(ubicaciones.get(i)) // Asignar ubicación
-                    .tipoMovimiento("SALIDA")
-                    .cantidad(10)
-                    .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
-                    .motivo("Venta mostrador")
-                    .referencia("REF-SAL-" + i)
-                    .build());
-        }
+    //         // Salida
+    //         movimientos.add(MovimientoInventario.builder()
+    //                 .producto(productos.get(i))
+    //                 .usuario(usuarios.get(1))
+    //                 .ubicacion(ubicaciones.get(i)) // Asignar ubicación
+    //                 .tipoMovimiento("SALIDA")
+    //                 .cantidad(10)
+    //                 .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
+    //                 .motivo("Venta mostrador")
+    //                 .referencia("REF-SAL-" + i)
+    //                 .build());
+    //     }
         
-        movimientoInventarioRepository.saveAll(movimientos);
-    }
+    //     movimientoInventarioRepository.saveAll(movimientos);
+    // }
 }
