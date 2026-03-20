@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockflow.core.entity.EntityDto;
 import com.stockflow.core.entity.Usuario;
 
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +33,7 @@ public class UsuarioDto extends RepresentationModel<UsuarioDto> implements Entit
     private String email;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String contrasena;
+    @Size(max = 255)
     private String rol;
     private Boolean estado;
     private Integer version;

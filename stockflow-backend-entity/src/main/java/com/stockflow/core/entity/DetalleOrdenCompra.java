@@ -40,6 +40,17 @@ public class DetalleOrdenCompra {
     @Column(insertable = false, updatable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
+    @Builder.Default
+    @Column(name = "cantidad_recibida", nullable = false)
+    private Integer cantidadRecibida = 0;
+
+    @Column(name = "cantidad_pendiente", insertable = false, updatable = false)
+    private Integer cantidadPendiente;
+
+    @Builder.Default
+    @Column(name = "estado_detalle", nullable = false, length = 50)
+    private String estadoDetalle = "Pendiente Recepción";
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

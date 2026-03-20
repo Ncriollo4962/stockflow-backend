@@ -3,12 +3,12 @@ package com.stockflow.core.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockflow.core.entity.EntityDto;
 import com.stockflow.core.entity.OrdenCompra;
 import com.stockflow.core.entity.Proveedor;
@@ -35,14 +35,13 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
    private String numeroOrden;
    private ProveedorDto proveedor;
    private UsuarioDto usuario;
-   private LocalDateTime fechaCompra;
+   private LocalDateTime fechaOrdenCompra;
    private LocalDateTime fechaEntrega;
-   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   private LocalDateTime fechaCreacion;
    private String estado;
    private BigDecimal totalCompra;
    private String notas;
    private Integer version;
+   private java.util.List<DetalleOrdenCompraDto> detallesOrdenCompra;
 
    // --- Banderas de control (Template) ---
    @JsonIgnore
@@ -53,7 +52,7 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
    private boolean defNumeroOrden = true;
    @JsonIgnore
    @Builder.Default
-   private boolean defFechaCompra = true;
+   private boolean defFechaOrdenCompra = true;
    @JsonIgnore
    @Builder.Default
    private boolean defFechaEntrega = true;
@@ -71,13 +70,13 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
    private boolean defVersion = true;
    @JsonIgnore
    @Builder.Default
-   private boolean defFechaCreacion = true;
-   @JsonIgnore
-   @Builder.Default
    private ProveedorDto defProveedor = ProveedorDto.build();
    @JsonIgnore
    @Builder.Default
    private UsuarioDto defUsuario = UsuarioDto.build();
+   @JsonIgnore
+   @Builder.Default
+   private List<DetalleOrdenCompraDto> defDetallesOrdenCompra = new java.util.ArrayList<>();
 
    public static OrdenCompraDto build() {
       return OrdenCompraDto.builder().build();
@@ -98,8 +97,8 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
          dto.setId(entity.getId());
       if (template.isDefNumeroOrden())
          dto.setNumeroOrden(entity.getNumeroOrden());
-      if (template.isDefFechaCompra())
-         dto.setFechaCompra(entity.getFechaCompra());
+      if (template.isDefFechaOrdenCompra())
+         dto.setFechaOrdenCompra(entity.getFechaOrdenCompra());
       if (template.isDefFechaEntrega())
          dto.setFechaEntrega(entity.getFechaEntrega());
       if (template.isDefEstado())
@@ -110,14 +109,20 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
          dto.setNotas(entity.getNotas());
       if (template.isDefVersion())
          dto.setVersion(entity.getVersion());
-      if (template.isDefFechaCreacion())
-         dto.setFechaCreacion(entity.getFechaCreacion());
 
       if (template.getDefProveedor() != null && entity.getProveedor() != null) {
          dto.setProveedor(ProveedorDto.build().fromEntity(template.getDefProveedor(), entity.getProveedor()));
       }
       if (template.getDefUsuario() != null && entity.getUsuario() != null) {
          dto.setUsuario(UsuarioDto.build().fromEntity(template.getDefUsuario(), entity.getUsuario()));
+      }
+      if (template.getDefDetallesOrdenCompra() != null 
+            && entity.getDetallesOrdenCompra() != null 
+            && !entity.getDetallesOrdenCompra().isEmpty()) {
+         dto.setDetallesOrdenCompra(
+               entity.getDetallesOrdenCompra().stream()
+                     .map(d->DetalleOrdenCompraDto.build().fromEntity(d))
+                     .toList());
       }
 
       return dto;
@@ -128,7 +133,7 @@ public class OrdenCompraDto extends RepresentationModel<OrdenCompraDto>
       return OrdenCompra.builder()
             .id(this.id)
             .numeroOrden(this.numeroOrden)
-            .fechaCompra(this.fechaCompra)
+            .fechaOrdenCompra(this.fechaOrdenCompra)
             .fechaEntrega(this.fechaEntrega)
             .estado(this.estado)
             .totalCompra(this.totalCompra)

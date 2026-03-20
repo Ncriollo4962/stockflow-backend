@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,7 @@ public class DatabaseInitializer {
     private final PasswordEncoder passwordEncoder;
 
     @Bean
+    @ConditionalOnProperty(prefix = "stockflow.db", name = "initializer.enabled", havingValue = "true")
     @Transactional
     public CommandLineRunner initDatabase() {
         return args -> {
@@ -52,7 +54,7 @@ public class DatabaseInitializer {
             initInventario();
             initOrdenesCompra();
             initOrdenesVenta();
-            initMovimientos();
+            // initMovimientos();
 
             log.info("Carga de datos de prueba finalizada.");
         };
@@ -129,11 +131,11 @@ public class DatabaseInitializer {
         log.info("Creando categorias...");
         List<Categoria> categorias = new ArrayList<>();
         
-        categorias.add(Categoria.builder().codigo("CAT001").nombre("Electrónica").descripcion("Dispositivos electrónicos").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT002").nombre("Hogar").descripcion("Artículos para el hogar").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT003").nombre("Ropa").descripcion("Prendas de vestir").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT004").nombre("Juguetes").descripcion("Juguetes para niños").estado(true).build());
-        categorias.add(Categoria.builder().codigo("CAT005").nombre("Deportes").descripcion("Artículos deportivos").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT001").nombre("Herramientas Eléctricas").descripcion("Taladros, amoladoras, sierras").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT002").nombre("Construcción").descripcion("Cementos, agregados, ladrillos").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT003").nombre("Gasfitería").descripcion("Tubos, válvulas, accesorios").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT004").nombre("Electricidad").descripcion("Cables, interruptores, focos").estado(true).build());
+        categorias.add(Categoria.builder().codigo("CAT005").nombre("Pinturas").descripcion("Pinturas, solventes, brochas").estado(true).build());
 
         categoriaRepository.saveAll(categorias);
     }
@@ -143,11 +145,12 @@ public class DatabaseInitializer {
         log.info("Creando ubicaciones...");
         List<Ubicacion> ubicaciones = new ArrayList<>();
 
-        ubicaciones.add(Ubicacion.builder().codigo("UBI001").nombre("Almacén Central").descripcion("Almacén principal").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI002").nombre("Tienda Norte").descripcion("Sucursal Norte").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI003").nombre("Tienda Sur").descripcion("Sucursal Sur").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI004").nombre("Depósito 1").descripcion("Depósito de respaldo").estado(true).build());
-        ubicaciones.add(Ubicacion.builder().codigo("UBI005").nombre("Estante A").descripcion("Estantería A en central").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI001").nombre("Pasillo A Anaquel A1 Estante A1-01").descripcion("Pasillo principal").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI002").nombre("Pasillo B Anaquel B2 Estante B2-01").descripcion("Pasillo secundario").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI003").nombre("Pasillo A Anaquel A1 Estante A1-02").descripcion("Anaquel del Pasillo A").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI004").nombre("Pasillo B Anaquel B2 Estante B2-02").descripcion("Anaquel del Pasillo B").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI005").nombre("Pasillo A Anaquel A1 Estante A1-03").descripcion("Estante del Anaquel 1").estado(true).build());
+        ubicaciones.add(Ubicacion.builder().codigo("UBI006").nombre("Pasillo B Anaquel B2 Estante B2-03").descripcion("Estante del Anaquel 2").estado(true).build());
 
         ubicacionRepository.saveAll(ubicaciones);
     }
@@ -172,11 +175,11 @@ public class DatabaseInitializer {
         List<Categoria> categorias = categoriaRepository.findAll();
         List<Producto> productos = new ArrayList<>();
 
-        productos.add(Producto.builder().codigo("PROD001").nombre("Laptop Gamer").descripcion("Laptop de alto rendimiento").categoria(categorias.get(0)).precioCosto(new BigDecimal("1000.00")).precioVenta(new BigDecimal("1500.00")).cantidadMinima(5).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD002").nombre("Smartphone X").descripcion("Último modelo").categoria(categorias.get(0)).precioCosto(new BigDecimal("500.00")).precioVenta(new BigDecimal("800.00")).cantidadMinima(10).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD003").nombre("Sofá 3 Cuerpos").descripcion("Sofá cómodo").categoria(categorias.get(1)).precioCosto(new BigDecimal("300.00")).precioVenta(new BigDecimal("600.00")).cantidadMinima(2).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD004").nombre("Camiseta Polo").descripcion("Camiseta algodón").categoria(categorias.get(2)).precioCosto(new BigDecimal("10.00")).precioVenta(new BigDecimal("25.00")).cantidadMinima(20).estado(true).build());
-        productos.add(Producto.builder().codigo("PROD005").nombre("Pelota Fútbol").descripcion("Pelota oficial").categoria(categorias.get(4)).precioCosto(new BigDecimal("15.00")).precioVenta(new BigDecimal("30.00")).cantidadMinima(15).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD001").nombre("Taladro Percutor 1/2\"").descripcion("Taladro profesional 750W").categoria(categorias.get(0)).precioCosto(new BigDecimal("180.00")).precioVenta(new BigDecimal("250.00")).cantidadMinima(5).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD002").nombre("Cemento Portland 42.5kg").descripcion("Cemento Tipo I para construcción").categoria(categorias.get(1)).precioCosto(new BigDecimal("22.00")).precioVenta(new BigDecimal("28.00")).cantidadMinima(50).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD003").nombre("Tubo PVC Desagüe 4\" x 3m").descripcion("Tubo para desagüe clase pesada").categoria(categorias.get(2)).precioCosto(new BigDecimal("15.00")).precioVenta(new BigDecimal("25.00")).cantidadMinima(20).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD004").nombre("Cable Eléctrico #12 AWG").descripcion("Rollo de 100m Indeco").categoria(categorias.get(3)).precioCosto(new BigDecimal("150.00")).precioVenta(new BigDecimal("210.00")).cantidadMinima(10).estado(true).build());
+        productos.add(Producto.builder().codigo("PROD005").nombre("Pintura Látex Blanca 1GL").descripcion("Pintura lavable mate interior").categoria(categorias.get(4)).precioCosto(new BigDecimal("45.00")).precioVenta(new BigDecimal("65.00")).cantidadMinima(15).estado(true).build());
 
         productoRepository.saveAll(productos);
     }
@@ -223,15 +226,15 @@ public class DatabaseInitializer {
         int cantidad = Math.min(5, Math.min(proveedores.size(), Math.min(usuarios.size(), productos.size())));
         for (int i = 0; i < cantidad; i++) {
             OrdenCompra orden = OrdenCompra.builder()
-                    .numeroOrden("OC-2024-00" + (i + 1))
+                    .numeroOrden("OC-2026-00" + (i + 1))
                     .proveedor(proveedores.get(i))
                     .usuario(usuarios.get(0)) // Admin
-                    .fechaCompra(LocalDateTime.now().minusDays(i * 2))
+                    .fechaOrdenCompra(LocalDateTime.now().minusDays(i * 2))
                     .fechaEntrega(LocalDateTime.now().plusDays(5))
-                    .estado(EnumCodigoEstado.PENDIENTE_RECEPCION.name())
+                    .estado(EnumCodigoEstado.APERTURADA.getCodigo())
                     .totalCompra(new BigDecimal("1000.00"))
                     .notas("Nota de prueba " + (i + 1))
-                    .detalleOrdenCompras(new ArrayList<>())
+                    .detallesOrdenCompra(new ArrayList<>())
                     .build();
 
             // Agregar detalle
@@ -240,11 +243,12 @@ public class DatabaseInitializer {
                     .producto(productos.get(i))
                     .cantidad(10)
                     .precioUnitario(productos.get(i).getPrecioCosto())
-                    .subtotal(productos.get(i).getPrecioCosto().multiply(new BigDecimal("10")))
+                    .cantidadRecibida(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo())
                     .build();
             
-            orden.getDetalleOrdenCompras().add(detalle);
-            orden.setTotalCompra(detalle.getSubtotal()); // Actualizar total
+            orden.getDetallesOrdenCompra().add(detalle);
+            orden.setTotalCompra(productos.get(i).getPrecioCosto().multiply(new BigDecimal("10"))); // Actualizar total
             
             ordenes.add(orden);
         }
@@ -266,14 +270,14 @@ public class DatabaseInitializer {
         int cantidad = Math.min(5, productos.size());
         for (int i = 0; i < cantidad; i++) {
             OrdenVenta orden = OrdenVenta.builder()
-                    .numeroOrden("OV-2024-00" + (i + 1))
+                    .numeroOrden("OV-2026-00" + (i + 1))
                     .usuario(usuarios.get(1)) // Vendedor
                     .clienteNombre("Cliente " + (i + 1))
                     .clienteEmail("cliente" + (i + 1) + "@email.com")
                     .clienteTelefono("99988877" + i)
                     .direccion("Dirección de entrega " + (i + 1))
                     .fechaVenta(LocalDateTime.now().minusDays(i))
-                    .estado(EnumCodigoEstado.PENDIENTE_DESPACHO.name())
+                    .estado(EnumCodigoEstado.APERTURADA.getCodigo())
                     .totalVenta(BigDecimal.ZERO)
                     .detalleOrdenVenta(new ArrayList<>())
                     .build();
@@ -284,11 +288,12 @@ public class DatabaseInitializer {
                     .producto(productos.get(i))
                     .cantidad(2)
                     .precioUnitario(productos.get(i).getPrecioVenta())
-                    .subtotal(productos.get(i).getPrecioVenta().multiply(new BigDecimal("2")))
+                    .cantidadDespachada(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo())
                     .build();
             
             orden.getDetalleOrdenVenta().add(detalle);
-            orden.setTotalVenta(detalle.getSubtotal());
+            orden.setTotalVenta(productos.get(i).getPrecioVenta().multiply(new BigDecimal("2")));
 
             ordenes.add(orden);
         }
@@ -296,46 +301,46 @@ public class DatabaseInitializer {
         ordenVentaRepository.saveAll(ordenes);
     }
     
-    private void initMovimientos() {
-        log.info("Creando movimientos de inventario...");
-        List<Producto> productos = productoRepository.findAll();
-        List<Usuario> usuarios = usuarioRepository.findAll();
-        List<Ubicacion> ubicaciones = ubicacionRepository.findAll();
-        List<MovimientoInventario> movimientos = new ArrayList<>();
+    // private void initMovimientos() {
+    //     log.info("Creando movimientos de inventario...");
+    //     List<Producto> productos = productoRepository.findAll();
+    //     List<Usuario> usuarios = usuarioRepository.findAll();
+    //     List<Ubicacion> ubicaciones = ubicacionRepository.findAll();
+    //     List<MovimientoInventario> movimientos = new ArrayList<>();
         
-        if (productos.isEmpty() || usuarios.size() < 2 || ubicaciones.isEmpty()) {
-            log.warn("No se puede inicializar movimientos: faltan dependencias.");
-            return;
-        }
+    //     if (productos.isEmpty() || usuarios.size() < 2 || ubicaciones.isEmpty()) {
+    //         log.warn("No se puede inicializar movimientos: faltan dependencias.");
+    //         return;
+    //     }
 
-        int cantidad = Math.min(5, Math.min(productos.size(), ubicaciones.size()));
-        // Simular movimientos en diferentes meses para el gráfico
-        for (int i = 0; i < cantidad; i++) {
-            // Entrada
-            movimientos.add(MovimientoInventario.builder()
-                    .producto(productos.get(i))
-                    .usuario(usuarios.get(0))
-                    .ubicacion(ubicaciones.get(i)) // Asignar ubicación
-                    .tipoMovimiento("ENTRADA")
-                    .cantidad(50)
-                    .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
-                    .motivo("Compra inicial")
-                    .referencia("REF-ENT-" + i)
-                    .build());
+    //     int cantidad = Math.min(5, Math.min(productos.size(), ubicaciones.size()));
+    //     // Simular movimientos en diferentes meses para el gráfico
+    //     for (int i = 0; i < cantidad; i++) {
+    //         // Entrada
+    //         movimientos.add(MovimientoInventario.builder()
+    //                 .producto(productos.get(i))
+    //                 .usuario(usuarios.get(0))
+    //                 .ubicacion(ubicaciones.get(i)) // Asignar ubicación
+    //                 .tipoMovimiento("ENTRADA")
+    //                 .cantidad(50)
+    //                 .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
+    //                 .motivo("Compra inicial")
+    //                 .referencia("REF-ENT-" + i)
+    //                 .build());
             
-            // Salida
-            movimientos.add(MovimientoInventario.builder()
-                    .producto(productos.get(i))
-                    .usuario(usuarios.get(1))
-                    .ubicacion(ubicaciones.get(i)) // Asignar ubicación
-                    .tipoMovimiento("SALIDA")
-                    .cantidad(10)
-                    .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
-                    .motivo("Venta mostrador")
-                    .referencia("REF-SAL-" + i)
-                    .build());
-        }
+    //         // Salida
+    //         movimientos.add(MovimientoInventario.builder()
+    //                 .producto(productos.get(i))
+    //                 .usuario(usuarios.get(1))
+    //                 .ubicacion(ubicaciones.get(i)) // Asignar ubicación
+    //                 .tipoMovimiento("SALIDA")
+    //                 .cantidad(10)
+    //                 .fechaMovimiento(LocalDateTime.now().minusMonths(i)) // Diferentes meses
+    //                 .motivo("Venta mostrador")
+    //                 .referencia("REF-SAL-" + i)
+    //                 .build());
+    //     }
         
-        movimientoInventarioRepository.saveAll(movimientos);
-    }
+    //     movimientoInventarioRepository.saveAll(movimientos);
+    // }
 }

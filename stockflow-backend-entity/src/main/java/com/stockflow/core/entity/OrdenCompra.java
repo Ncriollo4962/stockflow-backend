@@ -38,7 +38,7 @@ public class OrdenCompra {
     private Usuario usuario;
 
     @Column(name = "fecha_orden_compra", nullable = false)
-    private LocalDateTime fechaCompra;
+    private LocalDateTime fechaOrdenCompra;
 
     @Column(name = "fecha_entrega")
     private LocalDateTime fechaEntrega;
@@ -52,15 +52,12 @@ public class OrdenCompra {
     @Column(length = 350)
     private String notas;
 
-    @Column(name = "fecha_creacion", insertable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
-
     @Version
     private Integer version;
 
     @OneToMany(mappedBy = "ordenCompra", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
-    private List<DetalleOrdenCompra> detalleOrdenCompras;
+    private List<DetalleOrdenCompra> detallesOrdenCompra;
 
     @Override
     public boolean equals(Object o) {

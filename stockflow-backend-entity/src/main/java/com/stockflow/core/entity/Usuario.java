@@ -37,7 +37,7 @@ public class Usuario implements UserDetails {
     @Column(nullable = false)
     private String contrasena;
 
-    @Column( length = 50, nullable = false)
+    @Column(nullable = false, length = 255)
     private String rol;
 
     private Boolean estado = true;

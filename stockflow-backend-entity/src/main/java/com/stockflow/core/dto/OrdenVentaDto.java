@@ -1,17 +1,24 @@
 package com.stockflow.core.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.stockflow.core.entity.EntityDto;
-import com.stockflow.core.entity.OrdenVenta;
-import com.stockflow.core.entity.Usuario;
-import lombok.*;
-import org.springframework.hateoas.RepresentationModel;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.hateoas.RepresentationModel;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.stockflow.core.entity.EntityDto;
+import com.stockflow.core.entity.OrdenVenta;
+import com.stockflow.core.entity.Usuario;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -32,10 +39,11 @@ public class OrdenVentaDto extends RepresentationModel<OrdenVentaDto>
    private String clienteTelefono;
    private String direccion;
    private LocalDateTime fechaVenta;
-   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+   // @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    private BigDecimal totalVenta;
    private String estado;
    private Integer version;
+   private List<DetalleOrdenVentaDto> detallesOrdenVenta;
 
    // --- Banderas de control (Template) ---
    @JsonIgnore
@@ -68,10 +76,12 @@ public class OrdenVentaDto extends RepresentationModel<OrdenVentaDto>
    @JsonIgnore
    @Builder.Default
    private boolean defVersion = true;
-
    @JsonIgnore
    @Builder.Default
    private UsuarioDto defUsuario = UsuarioDto.build();
+   @JsonIgnore
+   @Builder.Default
+   private List<DetalleOrdenVentaDto> defDetallesOrdenVenta = new ArrayList<>();
 
    public static OrdenVentaDto build() {
       return OrdenVentaDto.builder().build();
@@ -113,6 +123,19 @@ public class OrdenVentaDto extends RepresentationModel<OrdenVentaDto>
          dto.setUsuario(UsuarioDto.build().fromEntity(template.getDefUsuario(), entity.getUsuario()));
       }
 
+      if (template.getDefDetallesOrdenVenta() != null 
+          && entity.getDetalleOrdenVenta() != null 
+          && !entity.getDetalleOrdenVenta().isEmpty()) {
+          dto.setDetallesOrdenVenta(
+                entity.getDetalleOrdenVenta().stream()
+                      .map(d -> {
+                          DetalleOrdenVentaDto templateDetalle = DetalleOrdenVentaDto.build();
+                          templateDetalle.setDefOrdenVenta(null);
+                          return templateDetalle.fromEntity(d);
+                      })
+                      .toList());
+      }
+
       return dto;
    }
 
@@ -129,8 +152,9 @@ public class OrdenVentaDto extends RepresentationModel<OrdenVentaDto>
             .estado(this.estado)
             .version(this.version)
             .usuario(this.usuario != null && this.usuario.getId() != null
-                  ? Usuario.builder().id(this.usuario.getId()).build()
+                  ? Usuario.builder().id(this.usuario.getId()).version(this.usuario.getVersion()).build()
                   : null)
+                  .totalVenta(this.totalVenta)
             .build();
    }
 }

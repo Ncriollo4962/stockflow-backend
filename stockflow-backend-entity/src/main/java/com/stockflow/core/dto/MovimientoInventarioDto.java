@@ -135,13 +135,13 @@ public class MovimientoInventarioDto extends RepresentationModel<MovimientoInven
             .notas(this.notas)
             .version(this.version)
             .producto(this.producto != null && this.producto.getId() != null
-                  ? Producto.builder().id(this.producto.getId()).build()
+                  ? Producto.builder().id(this.producto.getId()).version(this.producto.getVersion()).build()
                   : null)
             .ubicacion(this.ubicacion != null && this.ubicacion.getId() != null
-                  ? Ubicacion.builder().id(this.ubicacion.getId()).build()
+                  ? Ubicacion.builder().id(this.ubicacion.getId()).version(this.ubicacion.getVersion()).build()
                   : null)
             .usuario(this.usuario != null && this.usuario.getId() != null
-                  ? Usuario.builder().id(this.usuario.getId()).build()
+                  ? Usuario.builder().id(this.usuario.getId()).version(this.usuario.getVersion()).build()
                   : null)
             .build();
    }

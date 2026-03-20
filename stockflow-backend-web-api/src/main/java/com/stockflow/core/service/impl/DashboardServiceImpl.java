@@ -44,13 +44,13 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public Integer countOrdenVentaByEstadoPendienteDespacho() {
-        return Math.toIntExact(ordenVentaRepository.countByEstado(EnumCodigoEstado.PENDIENTE_DESPACHO.name()));
+        return Math.toIntExact(ordenVentaRepository.countByEstado(EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo()));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Integer countOrdenCompraByEstadoPendienteRecepcion() {
-        return Math.toIntExact(ordenCompraRepository.countByEstado(EnumCodigoEstado.PENDIENTE_RECEPCION.name()));
+        return Math.toIntExact(ordenCompraRepository.countByEstado(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo()));
     }
 
     @Override

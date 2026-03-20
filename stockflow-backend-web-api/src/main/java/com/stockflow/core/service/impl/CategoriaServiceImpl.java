@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +44,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
         validarCamposRequeridosCategoria(categoriaDto);
 
-        Categoria categoryToUpdate = categoryRepository.findById(categoriaDto.getId())
+        Categoria categoryToUpdate = categoryRepository.findById(Objects.requireNonNull(categoriaDto.getId(), "Category ID must not be null"))
                 .orElseThrow(() -> new ValidationException("Categoría no encontrada con ID: " + categoriaDto.getId()));
 
         validateVersion(categoriaDto, categoryToUpdate);
@@ -65,10 +66,10 @@ public class CategoriaServiceImpl implements CategoriaService {
     private static void validateVersion(CategoriaDto categoriaDto, Categoria categoriaBD) {
         if (categoriaDto.getVersion() != null && !categoriaBD.getVersion().equals(categoriaDto.getVersion())) {
             CategoriaDto actual = CategoriaDto.build().fromEntity(new CategoriaDto(), categoriaBD);
-            throw new ConflictException("La categoria ha sido modificado por otro administrador. Por favor, recargue la página", actual);
+            throw new ConflictException(
+                    "La categoria ha sido modificado por otro administrador. Por favor, recargue la página", actual);
         }
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -81,19 +82,19 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Override
     @Transactional(readOnly = true)
     public CategoriaDto findById(Integer id) {
-        return categoryRepository.findById(id)
+        return categoryRepository.findById(java.util.Objects.requireNonNull(id))
                 .map(category -> CategoriaDto.build().fromEntity(category))
                 .orElseThrow(() -> new ValidationException("Categoría no encontrada con ID: " + id));
     }
 
     @Override
     @Transactional
-    public void delete(CategoriaDto categoriaDto) {
+    public void delete(Integer id) {
 
-        if (categoryRepository.existsById(categoriaDto.getId())) {
-            categoryRepository.deleteById(categoriaDto.getId());
+        if (id != null && categoryRepository.existsById(id)) {
+            categoryRepository.deleteById(id);
         } else {
-            throw new ValidationException("No se encontró la Categoría con ID: " + categoriaDto.getId());
+            throw new ValidationException("No se encontró la Categoría con ID: " + id);
         }
 
     }
