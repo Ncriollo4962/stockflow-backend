@@ -11,3 +11,4 @@ startCommand = "java -jar stockflow-backend-web-api/target/stockflow-backend-web
 # Forzar la versión de Java
 [variables]
   NIXPACKS_JDK_VERSION = "21"
+  NIXPACKS_JAVA_VERSION = "21"
