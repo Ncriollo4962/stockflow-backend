@@ -1,0 +1,6 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "mvn clean package -DskipTests -B"
+
+[deploy]
+startCommand = "java -jar stockflow-backend-web-api/target/*.jar"
