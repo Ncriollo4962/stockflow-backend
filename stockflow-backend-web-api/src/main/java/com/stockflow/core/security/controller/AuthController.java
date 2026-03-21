@@ -23,6 +23,11 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @GetMapping("/ping")
+    public ResponseEntity<ApiResponse> ping() {
+        return ResponseEntity.ok(ApiResponse.ok("OK", "pong"));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
