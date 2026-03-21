@@ -7,3 +7,7 @@ paths = ["stockflow-backend-web-api/target/*.jar"]
 
 [deploy]
 startCommand = "java -jar stockflow-backend-web-api/target/stockflow-backend-web-api-1.0-SNAPSHOT.jar"
+
+# Forzar la versión de Java
+[variables]
+  NIXPACKS_JDK_VERSION = "21"
