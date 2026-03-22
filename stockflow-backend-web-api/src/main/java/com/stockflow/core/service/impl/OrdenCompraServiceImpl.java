@@ -75,7 +75,6 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
                         return d;
                     })
                     .toList();
-
             detalleOrdenCompraRepository.saveAll(Objects.requireNonNull(detallesToSave, "Detalles de la orden de compra no pueden ser nulos"));
         }
     }
