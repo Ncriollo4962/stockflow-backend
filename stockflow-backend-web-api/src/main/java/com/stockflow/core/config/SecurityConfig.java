@@ -49,10 +49,21 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Solo el login y la documentación son públicos
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                
+                // 1. Autenticación
+                .requestMatchers("/api/auth/**").permitAll()
+                
+                // 2. Swagger y Documentación (Lista completa para evitar el 403)
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/v3/api-docs.yaml").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/swagger-ui.html").permitAll()
+                .requestMatchers("/swagger-resources/**").permitAll()
+                .requestMatchers("/webjars/**").permitAll()
+
+                // 3. Healthcheck de Railway (Crítico)
+                .requestMatchers("/").permitAll()
+                .requestMatchers("/actuator/health/**").permitAll()
 
                         // TODO LO DEMÁS requiere token
                         .anyRequest().authenticated())
