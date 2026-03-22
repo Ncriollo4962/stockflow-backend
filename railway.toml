@@ -11,7 +11,7 @@ nixPkgs = ["jdk21_headless", "maven"]
 [deploy]
 startCommand = "java -jar stockflow-backend-web-api/target/stockflow-backend-web-api-1.0-SNAPSHOT.jar"
 restartPolicyType = "ON_FAILURE"
-healthcheckPath = "/stockflow-backend/"
+healthcheckPath = "/stockflow-backend/actuator/health/liveness"
 healthcheckTimeout = 300
 
 # Forzar la versión de Java
