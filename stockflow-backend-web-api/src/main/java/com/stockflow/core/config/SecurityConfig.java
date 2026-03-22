@@ -65,7 +65,7 @@ public class SecurityConfig {
                 .requestMatchers("/").permitAll()
                 .requestMatchers("/actuator/health/**").permitAll()
 
-                        // TODO LO DEMÁS requiere token
+                        // TODO LO DEMÁS requiere autenticación con token
                         .anyRequest().authenticated())
 
                 // 3. Política de sesión STATELESS (No guardamos cookies)
