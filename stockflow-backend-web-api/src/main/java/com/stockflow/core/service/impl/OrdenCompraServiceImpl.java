@@ -68,6 +68,7 @@ public class OrdenCompraServiceImpl implements OrdenCompraService {
             List<DetalleOrdenCompra> detallesToSave = dto.getDetallesOrdenCompra().stream()
                     .map(DetalleOrdenCompraDto::toEntity)
                     .map(d -> {
+                        d.setId(null);
                         validarCamposBaseDetalleOrdenCompra(DetalleOrdenCompraDto.build().fromEntity(d));
                         d.setOrdenCompra(savedOrdenCompra);
                         d.setProducto(d.getProducto());
