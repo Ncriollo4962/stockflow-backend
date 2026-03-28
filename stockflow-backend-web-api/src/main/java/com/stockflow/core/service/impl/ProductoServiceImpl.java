@@ -102,13 +102,11 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional
     public void delete(Integer id) {
+        Producto producto = productRepository.findById(Objects.requireNonNull(id, "Product ID must not be null"))
+                .orElseThrow(() -> new ValidationException("No se encontró el producto con ID: " + id));
 
-        if (productRepository.existsById(Objects.requireNonNull(id, "Product ID must not be null"))) {
-            productRepository.deleteById(id);
-        } else {
-            throw new ValidationException("No se encontró el producto con ID: " + id);
-        }
-
+        producto.setEstado(false);
+        productRepository.saveAndFlush(producto);
     }
 
     @Override

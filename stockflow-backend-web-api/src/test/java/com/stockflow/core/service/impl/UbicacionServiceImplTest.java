@@ -126,13 +126,16 @@ class UbicacionServiceImplTest {
     @Nested
     class Delete {
         @Test
-        void debeEliminar_cuandoExiste() {
-            Ubicacion entity = Ubicacion.builder().id(10).build();
+        void debeDesactivar_cuandoExiste() {
+            Ubicacion entity = Ubicacion.builder().id(10).estado(true).build();
             when(ubicacionRepository.findById(eq(10))).thenReturn(Optional.of(entity));
+            when(ubicacionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, Ubicacion.class));
 
             service.delete(10);
 
-            verify(ubicacionRepository).delete(eq(entity));
+            ArgumentCaptor<Ubicacion> captor = ArgumentCaptor.forClass(Ubicacion.class);
+            verify(ubicacionRepository).save(captor.capture());
+            assertEquals(Boolean.FALSE, captor.getValue().getEstado());
         }
 
         @Test
@@ -140,7 +143,7 @@ class UbicacionServiceImplTest {
             when(ubicacionRepository.findById(eq(10))).thenReturn(Optional.empty());
 
             assertThrows(ValidationException.class, () -> service.delete(10));
-            verify(ubicacionRepository, never()).delete(any());
+            verify(ubicacionRepository, never()).save(any());
         }
     }
 
@@ -184,4 +187,3 @@ class UbicacionServiceImplTest {
         return dto;
     }
 }
-

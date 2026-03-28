@@ -163,21 +163,25 @@ class UsuarioServiceImplTest {
     @Nested
     class Delete {
         @Test
-        void debeEliminar_cuandoExiste() {
-            when(userRepository.existsById(eq(10))).thenReturn(true);
+        void debeDesactivar_cuandoExiste() {
+            Usuario bd = Usuario.builder().id(10).estado(true).build();
+            when(userRepository.findById(eq(10))).thenReturn(Optional.of(bd));
+            when(userRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0, Usuario.class));
 
             service.delete(10);
 
-            verify(userRepository).deleteById(eq(10));
+            ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
+            verify(userRepository).saveAndFlush(captor.capture());
+            assertEquals(Boolean.FALSE, captor.getValue().getEstado());
         }
 
         @Test
         void debeLanzarExcepcion_cuandoNoExiste() {
-            when(userRepository.existsById(eq(10))).thenReturn(false);
+            when(userRepository.findById(eq(10))).thenReturn(Optional.empty());
 
             ValidationException ex = assertThrows(ValidationException.class, () -> service.delete(10));
             assertEquals("No se encontró el usuario con ID: 10", ex.getMessage());
-            verify(userRepository, never()).deleteById(any());
+            verify(userRepository, never()).saveAndFlush(any());
         }
     }
 

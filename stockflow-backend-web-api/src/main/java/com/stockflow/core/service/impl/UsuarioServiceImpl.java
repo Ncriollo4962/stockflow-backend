@@ -79,11 +79,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional
     public void delete(Integer id) {
 
-        if (userRepository.existsById(Objects.requireNonNull(id, "User ID must not be null"))) {
-            userRepository.deleteById(id);
-        } else {
-            throw new ValidationException("No se encontró el usuario con ID: " + id);
-        }
+        Usuario user = userRepository.findById(Objects.requireNonNull(id, "User ID must not be null"))
+                .orElseThrow(() -> new ValidationException("No se encontró el usuario con ID: " + id));
+
+        user.setEstado(false);
+        userRepository.saveAndFlush(user);
 
     }
 

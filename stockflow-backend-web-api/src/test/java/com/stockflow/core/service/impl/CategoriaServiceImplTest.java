@@ -141,28 +141,32 @@ class CategoriaServiceImplTest {
     @Nested
     class Delete {
         @Test
-        void debeEliminar_cuandoExiste() {
-            when(categoryRepository.existsById(eq(10))).thenReturn(true);
+        void debeDesactivar_cuandoExiste() {
+            Categoria bd = Categoria.builder().id(10).estado(true).build();
+            when(categoryRepository.findById(eq(10))).thenReturn(Optional.of(bd));
+            when(categoryRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0, Categoria.class));
 
             service.delete(10);
 
-            verify(categoryRepository).deleteById(eq(10));
+            ArgumentCaptor<Categoria> captor = ArgumentCaptor.forClass(Categoria.class);
+            verify(categoryRepository).saveAndFlush(captor.capture());
+            assertEquals(Boolean.FALSE, captor.getValue().getEstado());
         }
 
         @Test
         void debeLanzarExcepcion_cuandoIdEsNulo() {
             ValidationException ex = assertThrows(ValidationException.class, () -> service.delete(null));
             assertEquals("No se encontró la Categoría con ID: null", ex.getMessage());
-            verify(categoryRepository, never()).deleteById(any());
+            verify(categoryRepository, never()).saveAndFlush(any());
         }
 
         @Test
         void debeLanzarExcepcion_cuandoNoExiste() {
-            when(categoryRepository.existsById(eq(10))).thenReturn(false);
+            when(categoryRepository.findById(eq(10))).thenReturn(Optional.empty());
 
             ValidationException ex = assertThrows(ValidationException.class, () -> service.delete(10));
             assertEquals("No se encontró la Categoría con ID: 10", ex.getMessage());
-            verify(categoryRepository, never()).deleteById(any());
+            verify(categoryRepository, never()).saveAndFlush(any());
         }
     }
 

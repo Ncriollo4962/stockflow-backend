@@ -73,7 +73,8 @@ public class UbicacionServiceImpl implements UbicacionService {
     public void delete(Integer id) {
         Ubicacion entity = ubicacionRepository.findById(Objects.requireNonNull(id, "id must not be null"))
                 .orElseThrow(() -> new ValidationException("Ubicación no encontrada"));
-        ubicacionRepository.delete(Objects.requireNonNull(entity, "entity must not be null"));
+        entity.setEstado(false);
+        ubicacionRepository.save(entity);
     }
 
     @Override

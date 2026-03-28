@@ -27,12 +27,18 @@ import com.stockflow.core.dto.ProductoDto;
 import com.stockflow.core.dto.UbicacionDto;
 import com.stockflow.core.dto.UsuarioDto;
 import com.stockflow.core.entity.InventarioItem;
+import com.stockflow.core.entity.DetalleOrdenCompra;
+import com.stockflow.core.entity.OrdenCompra;
 import com.stockflow.core.entity.MovimientoInventario;
 import com.stockflow.core.entity.Producto;
 import com.stockflow.core.entity.Ubicacion;
 import com.stockflow.core.entity.Usuario;
 import com.stockflow.core.enums.EnumCodigoEstado;
 import com.stockflow.core.exception.ValidationException;
+import com.stockflow.core.repository.DetalleOrdenCompraRepository;
+import com.stockflow.core.repository.OrdenCompraRepository;
+import com.stockflow.core.repository.DetalleOrdenVentaRepository;
+import com.stockflow.core.repository.OrdenVentaRepository;
 import com.stockflow.core.repository.InventarioItemRepository;
 import com.stockflow.core.repository.MovimientoInventarioRepository;
 import com.stockflow.core.repository.ProductoRepository;
@@ -52,6 +58,14 @@ class MovimientoInventarioServiceImplTest {
     private UbicacionRepository ubicacionRepository;
     @Mock
     private UsuarioRepository usuarioRepository;
+    @Mock
+    private OrdenCompraRepository ordenCompraRepository;
+    @Mock
+    private DetalleOrdenCompraRepository detalleOrdenCompraRepository;
+    @Mock
+    private OrdenVentaRepository ordenVentaRepository;
+    @Mock
+    private DetalleOrdenVentaRepository detalleOrdenVentaRepository;
 
     @InjectMocks
     private MovimientoInventarioServiceImpl service;
@@ -105,6 +119,45 @@ class MovimientoInventarioServiceImplTest {
 
             assertThrows(ValidationException.class, () -> service.insert(dto));
             verify(inventarioItemRepository, never()).save(any());
+        }
+
+        @Test
+        void debeMarcarDetalleYOrdenComoRecibidaCompleta_cuandoCantidadRecibidaIgualSolicitada() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setReferencia("OC-2026-001");
+            dto.setTipoMovimiento(EnumCodigoEstado.ENTRADA.getCodigo());
+            dto.setCantidad(10);
+
+            OrdenCompra oc = OrdenCompra.builder()
+                    .id(1)
+                    .numeroOrden("OC-2026-001")
+                    .estado(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo())
+                    .build();
+            when(ordenCompraRepository.findByNumeroOrden("OC-2026-001")).thenReturn(Optional.of(oc));
+
+            DetalleOrdenCompra det = DetalleOrdenCompra.builder()
+                    .id(10)
+                    .cantidad(10)
+                    .cantidadRecibida(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo())
+                    .producto(Producto.builder().id(10).build())
+                    .ordenCompra(oc)
+                    .build();
+            when(detalleOrdenCompraRepository.findByOrdenCompraId(1)).thenReturn(List.of(det));
+            when(detalleOrdenCompraRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, DetalleOrdenCompra.class));
+            when(ordenCompraRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, OrdenCompra.class));
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of());
+
+            MovimientoInventarioDto saved = service.insert(dto);
+
+            assertNotNull(saved);
+            assertEquals(10, det.getCantidadRecibida());
+            assertEquals(EnumCodigoEstado.RECIBIDA_COMPLETA.getCodigo(), det.getEstadoDetalle());
+            assertEquals(EnumCodigoEstado.RECIBIDA_COMPLETA.getCodigo(), oc.getEstado());
+            verify(detalleOrdenCompraRepository).save(det);
+            verify(ordenCompraRepository).save(oc);
         }
     }
 
@@ -212,4 +265,3 @@ class MovimientoInventarioServiceImplTest {
         return dto;
     }
 }
-
