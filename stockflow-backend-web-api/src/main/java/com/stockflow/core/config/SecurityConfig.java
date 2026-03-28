@@ -63,6 +63,7 @@ public class SecurityConfig {
 
                 // 3. Healthcheck de Railway (Crítico)
                 .requestMatchers("/").permitAll()
+                .requestMatchers("/health").permitAll()
                 .requestMatchers("/actuator/health/**").permitAll()
 
                         // TODO LO DEMÁS requiere autenticación con token
