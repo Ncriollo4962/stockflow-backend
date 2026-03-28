@@ -65,10 +65,6 @@ public class SecurityConfig {
                 .requestMatchers("/").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/actuator/health/**").permitAll()
-                .requestMatchers("/stockflow-backend").permitAll()
-                .requestMatchers("/stockflow-backend/").permitAll()
-                .requestMatchers("/stockflow-backend/health").permitAll()
-                .requestMatchers("/stockflow-backend/actuator/health/**").permitAll()
 
                         // TODO LO DEMÁS requiere autenticación con token
                         .anyRequest().authenticated())
