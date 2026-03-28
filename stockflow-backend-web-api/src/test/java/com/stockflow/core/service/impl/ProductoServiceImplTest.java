@@ -162,21 +162,25 @@ class ProductoServiceImplTest {
     @Nested
     class Delete {
         @Test
-        void debeEliminar_cuandoExiste() {
-            when(productRepository.existsById(eq(10))).thenReturn(true);
+        void debeDesactivar_cuandoExiste() {
+            Producto bd = Producto.builder().id(10).estado(true).build();
+            when(productRepository.findById(eq(10))).thenReturn(Optional.of(bd));
+            when(productRepository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0, Producto.class));
 
             service.delete(10);
 
-            verify(productRepository).deleteById(eq(10));
+            ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
+            verify(productRepository).saveAndFlush(captor.capture());
+            assertEquals(Boolean.FALSE, captor.getValue().getEstado());
         }
 
         @Test
         void debeLanzarExcepcion_cuandoNoExiste() {
-            when(productRepository.existsById(eq(10))).thenReturn(false);
+            when(productRepository.findById(eq(10))).thenReturn(Optional.empty());
 
             ValidationException ex = assertThrows(ValidationException.class, () -> service.delete(10));
             assertEquals("No se encontró el producto con ID: 10", ex.getMessage());
-            verify(productRepository, never()).deleteById(any());
+            verify(productRepository, never()).saveAndFlush(any());
         }
     }
 

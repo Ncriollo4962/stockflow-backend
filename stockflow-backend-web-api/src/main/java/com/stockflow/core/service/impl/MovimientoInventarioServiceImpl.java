@@ -3,20 +3,29 @@ package com.stockflow.core.service.impl;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.stockflow.core.dto.MovimientoInventarioDto;
 import com.stockflow.core.entity.InventarioItem;
+import com.stockflow.core.entity.DetalleOrdenCompra;
+import com.stockflow.core.entity.DetalleOrdenVenta;
 import com.stockflow.core.entity.MovimientoInventario;
+import com.stockflow.core.entity.OrdenCompra;
+import com.stockflow.core.entity.OrdenVenta;
 import com.stockflow.core.entity.Producto;
 import com.stockflow.core.entity.Ubicacion;
 import com.stockflow.core.entity.Usuario;
 import com.stockflow.core.enums.EnumCodigoEstado;
 import com.stockflow.core.exception.ValidationException;
+import com.stockflow.core.repository.DetalleOrdenCompraRepository;
+import com.stockflow.core.repository.DetalleOrdenVentaRepository;
 import com.stockflow.core.repository.InventarioItemRepository;
 import com.stockflow.core.repository.MovimientoInventarioRepository;
+import com.stockflow.core.repository.OrdenCompraRepository;
+import com.stockflow.core.repository.OrdenVentaRepository;
 import com.stockflow.core.repository.ProductoRepository;
 import com.stockflow.core.repository.UbicacionRepository;
 import com.stockflow.core.repository.UsuarioRepository;
@@ -34,6 +43,10 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     private final ProductoRepository productoRepository;
     private final UbicacionRepository ubicacionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final OrdenCompraRepository ordenCompraRepository;
+    private final DetalleOrdenCompraRepository detalleOrdenCompraRepository;
+    private final OrdenVentaRepository ordenVentaRepository;
+    private final DetalleOrdenVentaRepository detalleOrdenVentaRepository;
 
     @Override
     @Transactional
@@ -65,6 +78,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         MovimientoInventario saved = movimientoInventarioRepository.save(entity);
 
         updateInventario(saved, false);
+        updateOrdenesRelacionadas(saved, false);
 
         return MovimientoInventarioDto.build().fromEntity(saved);
     }
@@ -76,6 +90,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 .orElseThrow(() -> new ValidationException("Movimiento no encontrado"));
 
         // Revertir efecto anterior
+        updateOrdenesRelacionadas(oldEntity, true);
         updateInventario(oldEntity, true);
 
         // Actualizar campos
@@ -115,6 +130,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
 
         // Aplicar nuevo efecto
         updateInventario(oldEntity, false);
+        updateOrdenesRelacionadas(oldEntity, false);
 
         MovimientoInventario saved = movimientoInventarioRepository.save(oldEntity);
         return MovimientoInventarioDto.build().fromEntity(saved);
@@ -126,6 +142,7 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         MovimientoInventario entity = movimientoInventarioRepository.findById(id)
                 .orElseThrow(() -> new ValidationException("Movimiento no encontrado"));
 
+        updateOrdenesRelacionadas(entity, true);
         updateInventario(entity, true);
 
         movimientoInventarioRepository.delete(entity);
@@ -211,6 +228,144 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
 
         itemToUpdate.setCantidad(newQuantity);
         inventarioItemRepository.save(itemToUpdate);
+    }
+
+    private void updateOrdenesRelacionadas(MovimientoInventario mov, boolean isRevert) {
+        if (mov == null) {
+            return;
+        }
+        if (mov.getCantidad() == null || mov.getCantidad() == 0) {
+            return;
+        }
+        if (mov.getProducto() == null || mov.getProducto().getId() == null) {
+            return;
+        }
+        if (mov.getReferencia() == null || mov.getReferencia().isBlank()) {
+            return;
+        }
+
+        String referencia = mov.getReferencia().trim();
+
+        if (isEntrada(mov.getTipoMovimiento())) {
+            if (applyRecepcionOrdenCompra(referencia, mov, isRevert)) {
+                return;
+            }
+        }
+
+        if (isSalida(mov.getTipoMovimiento())) {
+            applyDespachoOrdenVenta(referencia, mov, isRevert);
+        }
+    }
+
+    private boolean applyRecepcionOrdenCompra(String referencia, MovimientoInventario mov, boolean isRevert) {
+        Optional<OrdenCompra> ocOpt = ordenCompraRepository.findByNumeroOrden(referencia);
+        if (ocOpt == null || ocOpt.isEmpty()) {
+            return false;
+        }
+
+        OrdenCompra ordenCompra = ocOpt.get();
+        List<DetalleOrdenCompra> detalles = detalleOrdenCompraRepository.findByOrdenCompraId(ordenCompra.getId());
+        if (detalles == null || detalles.isEmpty()) {
+            return true;
+        }
+
+        Integer productoId = mov.getProducto().getId();
+        DetalleOrdenCompra detalle = detalles.stream()
+                .filter(d -> d.getProducto() != null && d.getProducto().getId() != null && d.getProducto().getId().equals(productoId))
+                .findFirst()
+                .orElseThrow(() -> new ValidationException("El producto no pertenece a la orden de compra: " + referencia));
+
+        int current = detalle.getCantidadRecibida() != null ? detalle.getCantidadRecibida() : 0;
+        int delta = isRevert ? -mov.getCantidad() : mov.getCantidad();
+        int next = current + delta;
+
+        if (next < 0) {
+            throw new ValidationException("Cantidad recibida no puede ser negativa para la orden: " + referencia);
+        }
+        if (detalle.getCantidad() != null && next > detalle.getCantidad()) {
+            throw new ValidationException("La cantidad recibida excede la cantidad solicitada para la orden: " + referencia);
+        }
+
+        detalle.setCantidadRecibida(next);
+        if (detalle.getCantidad() != null && next >= detalle.getCantidad()) {
+            detalle.setEstadoDetalle(EnumCodigoEstado.RECIBIDA_COMPLETA.getCodigo());
+        } else {
+            detalle.setEstadoDetalle(EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo());
+        }
+        detalleOrdenCompraRepository.save(detalle);
+
+        boolean allComplete = detalles.stream().allMatch(d -> {
+            int recibida = d.getCantidadRecibida() != null ? d.getCantidadRecibida() : 0;
+            return d.getCantidad() != null && recibida >= d.getCantidad();
+        });
+        ordenCompra.setEstado(allComplete ? EnumCodigoEstado.RECIBIDA_COMPLETA.getCodigo() : EnumCodigoEstado.PENDIENTE_RECEPCION.getCodigo());
+        ordenCompraRepository.save(ordenCompra);
+        return true;
+    }
+
+    private void applyDespachoOrdenVenta(String referencia, MovimientoInventario mov, boolean isRevert) {
+        Optional<OrdenVenta> ovOpt = ordenVentaRepository.findByNumeroOrden(referencia);
+        if (ovOpt == null || ovOpt.isEmpty()) {
+            return;
+        }
+
+        OrdenVenta ordenVenta = ovOpt.get();
+        List<DetalleOrdenVenta> detalles = detalleOrdenVentaRepository.findByOrdenVentaId(ordenVenta.getId());
+        if (detalles == null || detalles.isEmpty()) {
+            return;
+        }
+
+        Integer productoId = mov.getProducto().getId();
+        DetalleOrdenVenta detalle = detalles.stream()
+                .filter(d -> d.getProducto() != null && d.getProducto().getId() != null && d.getProducto().getId().equals(productoId))
+                .findFirst()
+                .orElseThrow(() -> new ValidationException("El producto no pertenece a la orden de venta: " + referencia));
+
+        int current = detalle.getCantidadDespachada() != null ? detalle.getCantidadDespachada() : 0;
+        int delta = isRevert ? -mov.getCantidad() : mov.getCantidad();
+        int next = current + delta;
+
+        if (next < 0) {
+            throw new ValidationException("Cantidad despachada no puede ser negativa para la orden: " + referencia);
+        }
+        if (detalle.getCantidad() != null && next > detalle.getCantidad()) {
+            throw new ValidationException("La cantidad despachada excede la cantidad solicitada para la orden: " + referencia);
+        }
+
+        detalle.setCantidadDespachada(next);
+        if (detalle.getCantidad() != null && next >= detalle.getCantidad()) {
+            detalle.setEstadoDetalle(EnumCodigoEstado.FINALIZADA.getCodigo());
+        } else {
+            detalle.setEstadoDetalle(EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo());
+        }
+        detalleOrdenVentaRepository.save(detalle);
+
+        boolean allComplete = detalles.stream().allMatch(d -> {
+            int despachada = d.getCantidadDespachada() != null ? d.getCantidadDespachada() : 0;
+            return d.getCantidad() != null && despachada >= d.getCantidad();
+        });
+        ordenVenta.setEstado(allComplete ? EnumCodigoEstado.FINALIZADA.getCodigo() : EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo());
+        ordenVentaRepository.save(ordenVenta);
+    }
+
+    private static boolean isEntrada(String tipo) {
+        if (tipo == null) {
+            return false;
+        }
+        return EnumCodigoEstado.ENTRADA.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.ENTRADA.getCodigo().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_ENTRADA_INVENTARIO.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_ENTRADA_INVENTARIO.getCodigo().equalsIgnoreCase(tipo);
+    }
+
+    private static boolean isSalida(String tipo) {
+        if (tipo == null) {
+            return false;
+        }
+        return EnumCodigoEstado.SALIDA.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.SALIDA.getCodigo().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.getCodigo().equalsIgnoreCase(tipo);
     }
 
     private void validarCamposBaseMovimientoInventario(MovimientoInventarioDto dto) {

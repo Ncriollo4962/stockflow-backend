@@ -90,12 +90,14 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Override
     @Transactional
     public void delete(Integer id) {
-
-        if (id != null && categoryRepository.existsById(id)) {
-            categoryRepository.deleteById(id);
-        } else {
-            throw new ValidationException("No se encontró la Categoría con ID: " + id);
+        if (id == null) {
+            throw new ValidationException("No se encontró la Categoría con ID: null");
         }
 
+        Categoria categoria = categoryRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("No se encontró la Categoría con ID: " + id));
+
+        categoria.setEstado(false);
+        categoryRepository.saveAndFlush(categoria);
     }
 }

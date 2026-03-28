@@ -17,6 +17,8 @@ public interface OrdenVentaRepository extends JpaRepository<OrdenVenta, Integer>
 
     Optional<OrdenVenta> findTopByOrderByIdDesc();
 
+    Optional<OrdenVenta> findByNumeroOrden(String numeroOrden);
+
     Long countByEstado(String estado);
 
     @Query("SELECT o FROM OrdenVenta o WHERE o.estado IN :estados")

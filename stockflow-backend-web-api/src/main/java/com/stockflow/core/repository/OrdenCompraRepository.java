@@ -15,6 +15,8 @@ import com.stockflow.core.entity.OrdenCompra;
 public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Integer> {
     Optional<OrdenCompra> findTopByOrderByIdDesc();
 
+    Optional<OrdenCompra> findByNumeroOrden(String numeroOrden);
+
     Long countByEstado(String estado);
 
     @Query("SELECT o FROM OrdenCompra o WHERE o.estado IN :estados")
