@@ -6,16 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HealthController {
 
-    @GetMapping({
-            "/",
-            "/health",
-            "/stockflow-backend",
-            "/stockflow-backend/",
-            "/stockflow-backend/health",
-            "/stockflow-backend/actuator/health",
-            "/stockflow-backend/actuator/health/liveness",
-            "/stockflow-backend/actuator/health/readiness"
-    })
+    @GetMapping({ "/", "/health" })
     public String health() {
         return "OK";
     }
