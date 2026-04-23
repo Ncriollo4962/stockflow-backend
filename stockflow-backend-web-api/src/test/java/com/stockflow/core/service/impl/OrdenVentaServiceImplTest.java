@@ -90,10 +90,10 @@ class OrdenVentaServiceImplTest {
             verify(inventarioItemRepository, times(2)).save(captor.capture());
 
             List<InventarioItem> savedItems = captor.getAllValues();
-            assertEquals(0, savedItems.get(0).getCantidad());
+            assertEquals(5, savedItems.get(0).getCantidad());
             assertEquals(5, savedItems.get(0).getCantidadReservada());
 
-            assertEquals(2, savedItems.get(1).getCantidad());
+            assertEquals(7, savedItems.get(1).getCantidad());
             assertEquals(6, savedItems.get(1).getCantidadReservada());
         }
 
@@ -146,7 +146,7 @@ class OrdenVentaServiceImplTest {
             DetalleOrdenVenta det = DetalleOrdenVenta.builder().id(1).producto(producto).cantidad(4).build();
             when(detalleOrdenVentaRepository.findByOrdenVentaId(5)).thenReturn(List.of(det));
 
-            InventarioItem item = InventarioItem.builder().id(10).cantidad(10).cantidadReservada(3).build();
+            InventarioItem item = InventarioItem.builder().id(10).cantidad(10).cantidadReservada(4).build();
             when(inventarioItemRepository.findForUpdateByProductoId(3)).thenReturn(List.of(item));
 
             when(ordenVentaRepository.findById(5)).thenReturn(Optional.of(OrdenVenta.builder().id(5).build()));
@@ -155,7 +155,7 @@ class OrdenVentaServiceImplTest {
             service.delete(5);
 
             verify(inventarioItemRepository).save(item);
-            assertEquals(14, item.getCantidad());
+            assertEquals(10, item.getCantidad());
             assertEquals(0, item.getCantidadReservada());
 
             verify(detalleOrdenVentaRepository).deleteByOrdenVentaId(5);

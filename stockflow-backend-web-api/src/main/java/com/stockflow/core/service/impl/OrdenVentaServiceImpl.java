@@ -4,11 +4,13 @@ import java.math.BigDecimal;
 import java.time.Year;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import com.stockflow.core.config.ApplicationConfig.DeadlockRetryExecutor;
 import com.stockflow.core.dto.DetalleOrdenVentaDto;
 import com.stockflow.core.dto.OrdenVentaDto;
 import com.stockflow.core.entity.DetalleOrdenVenta;
@@ -32,10 +34,29 @@ public class OrdenVentaServiceImpl implements OrdenVentaService {
     private final OrdenVentaRepository ordenVentaRepository;
     private final DetalleOrdenVentaRepository detalleOrdenVentaRepository;
     private final InventarioItemRepository inventarioItemRepository;
+    private final DeadlockRetryExecutor deadlockRetryExecutor;
+
+    private <T> T executeWithRetry(Supplier<T> action) {
+        DeadlockRetryExecutor executor = deadlockRetryExecutor;
+        return executor != null ? executor.execute(action) : action.get();
+    }
+
+    private void runWithRetry(Runnable action) {
+        DeadlockRetryExecutor executor = deadlockRetryExecutor;
+        if (executor != null) {
+            executor.run(action);
+            return;
+        }
+        action.run();
+    }
 
     @Override
-    @Transactional
     public OrdenVentaDto insert(OrdenVentaDto dto) {
+        return executeWithRetry(() -> insertInternal(dto));
+    }
+
+    @Transactional
+    protected OrdenVentaDto insertInternal(OrdenVentaDto dto) {
         validarCamposBaseOrdenVenta(dto);
 
         OrdenVenta ordenVenta = dto.toEntity();
@@ -60,8 +81,12 @@ public class OrdenVentaServiceImpl implements OrdenVentaService {
 
 
     @Override
-    @Transactional
     public OrdenVentaDto update(OrdenVentaDto dto) {
+        return executeWithRetry(() -> updateInternal(dto));
+    }
+
+    @Transactional
+    protected OrdenVentaDto updateInternal(OrdenVentaDto dto) {
         validarCamposBaseOrdenVenta(dto);
 
         OrdenVenta ordenVentaBD = ordenVentaRepository
@@ -94,8 +119,12 @@ public class OrdenVentaServiceImpl implements OrdenVentaService {
     }
 
     @Override
-    @Transactional
     public void delete(Integer d) {
+        runWithRetry(() -> deleteInternal(d));
+    }
+
+    @Transactional
+    protected void deleteInternal(Integer d) {
         if (d != null) {
             List<DetalleOrdenVenta> oldDetalles = detalleOrdenVentaRepository.findByOrdenVentaId(d);
             for (DetalleOrdenVenta old : oldDetalles) {
@@ -111,7 +140,6 @@ public class OrdenVentaServiceImpl implements OrdenVentaService {
     }
 
     @Override
-    @Transactional
     public void deleteAll(List<Integer> ids) {
         if (ids != null) {
             ids.forEach(this::delete);
@@ -232,35 +260,54 @@ public class OrdenVentaServiceImpl implements OrdenVentaService {
             throw new ValidationException("No hay stock disponible para el producto: " + det.getProducto().getNombre());
         }
 
-        int qtyNeeded = det.getCantidad();
-        
-        // Si es revertir, devolvemos stock al primer item (o distribuimos, pero simple es al primero con capacidad o el primero encontrado)
-        // Como no sabemos de cuál se descontó, devolvemos al que tiene más stock (el primero por el orden DESC) o simplemente al primero.
-        if (isRevert) {
-            InventarioItem item = items.get(0);
-            item.setCantidad(item.getCantidad() + qtyNeeded);
-            // Reducir reserva si es posible, sino dejar en 0
-            int nuevaReserva = item.getCantidadReservada() - qtyNeeded;
-            item.setCantidadReservada(Math.max(0, nuevaReserva));
-            inventarioItemRepository.save(item);
+        int qtyNeeded = det.getCantidad() == null ? 0 : det.getCantidad();
+        if (qtyNeeded <= 0) {
             return;
         }
 
-        // Si es descontar (Venta)
+        if (isRevert) {
+            int qtyToRelease = qtyNeeded;
+            for (InventarioItem item : items) {
+                if (qtyToRelease <= 0) {
+                    break;
+                }
+
+                int reservada = item.getCantidadReservada() == null ? 0 : item.getCantidadReservada();
+                if (reservada <= 0) {
+                    continue;
+                }
+
+                int toRelease = Math.min(reservada, qtyToRelease);
+                item.setCantidadReservada(reservada - toRelease);
+                inventarioItemRepository.save(item);
+                qtyToRelease -= toRelease;
+            }
+
+            if (qtyToRelease > 0) {
+                throw new ValidationException("No se puede liberar más de lo reservado. Faltan por liberar: " + qtyToRelease);
+            }
+            return;
+        }
+
         for (InventarioItem item : items) {
             if (qtyNeeded <= 0) break;
 
-            int available = item.getCantidad();
-            if (available <= 0) continue;
+            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad();
+            int reservada = item.getCantidadReservada() == null ? 0 : item.getCantidadReservada();
+            if (reservada > cantidad) {
+                throw new ValidationException("Inventario inconsistente: la cantidad reservada es mayor que el stock para el item ID " + item.getId());
+            }
 
-            int toDeduct = Math.min(available, qtyNeeded);
-            
-            item.setCantidad(available - toDeduct);
-            item.setCantidadReservada((item.getCantidadReservada() == null ? 0 : item.getCantidadReservada()) + toDeduct);
-            
+            int disponible = cantidad - reservada;
+            if (disponible <= 0) {
+                continue;
+            }
+
+            int toReserve = Math.min(disponible, qtyNeeded);
+            item.setCantidadReservada(reservada + toReserve);
             inventarioItemRepository.save(item);
             
-            qtyNeeded -= toDeduct;
+            qtyNeeded -= toReserve;
         }
 
         if (qtyNeeded > 0) {

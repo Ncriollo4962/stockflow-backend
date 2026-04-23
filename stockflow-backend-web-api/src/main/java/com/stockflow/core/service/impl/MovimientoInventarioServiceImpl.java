@@ -4,10 +4,12 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.stockflow.core.config.ApplicationConfig.DeadlockRetryExecutor;
 import com.stockflow.core.dto.MovimientoInventarioDto;
 import com.stockflow.core.entity.InventarioItem;
 import com.stockflow.core.entity.DetalleOrdenCompra;
@@ -47,19 +49,52 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     private final DetalleOrdenCompraRepository detalleOrdenCompraRepository;
     private final OrdenVentaRepository ordenVentaRepository;
     private final DetalleOrdenVentaRepository detalleOrdenVentaRepository;
+    private final DeadlockRetryExecutor deadlockRetryExecutor;
 
-    @Override
-    @Transactional
-    public List<MovimientoInventarioDto> insertAll(List<MovimientoInventarioDto> dtos) {
-        if (dtos == null || dtos.isEmpty()) {
-            throw new ValidationException("La lista de movimientos no puede estar vacía.");
+    private <T> T executeWithRetry(Supplier<T> action) {
+        DeadlockRetryExecutor executor = deadlockRetryExecutor;
+        return executor != null ? executor.execute(action) : action.get();
+    }
+
+    private void runWithRetry(Runnable action) {
+        DeadlockRetryExecutor executor = deadlockRetryExecutor;
+        if (executor != null) {
+            executor.run(action);
+            return;
         }
-        return dtos.stream().map(this::insert).toList();
+        action.run();
     }
 
     @Override
-    @Transactional
+    public List<MovimientoInventarioDto> insertAll(List<MovimientoInventarioDto> dtos) {
+        return executeWithRetry(() -> insertAllInternal(dtos));
+    }
+
+    @Override
     public MovimientoInventarioDto insert(MovimientoInventarioDto dto) {
+        return executeWithRetry(() -> insertInternal(dto));
+    }
+
+    @Override
+    public MovimientoInventarioDto update(MovimientoInventarioDto dto) {
+        return executeWithRetry(() -> updateInternal(dto));
+    }
+
+    @Override
+    public void delete(Integer id) {
+        runWithRetry(() -> deleteInternal(id));
+    }
+
+    @Transactional
+    protected List<MovimientoInventarioDto> insertAllInternal(List<MovimientoInventarioDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            throw new ValidationException("La lista de movimientos no puede estar vacía.");
+        }
+        return dtos.stream().map(this::insertInternal).toList();
+    }
+
+    @Transactional
+    protected MovimientoInventarioDto insertInternal(MovimientoInventarioDto dto) {
         validarCamposBaseMovimientoInventario(dto);
 
         if (dto.getCantidad() <= 0) {
@@ -83,9 +118,8 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         return MovimientoInventarioDto.build().fromEntity(saved);
     }
 
-    @Override
     @Transactional
-    public MovimientoInventarioDto update(MovimientoInventarioDto dto) {
+    protected MovimientoInventarioDto updateInternal(MovimientoInventarioDto dto) {
         MovimientoInventario oldEntity = movimientoInventarioRepository.findById(dto.getId())
                 .orElseThrow(() -> new ValidationException("Movimiento no encontrado"));
 
@@ -136,9 +170,8 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         return MovimientoInventarioDto.build().fromEntity(saved);
     }
 
-    @Override
     @Transactional
-    public void delete(Integer id) {
+    protected void deleteInternal(Integer id) {
         MovimientoInventario entity = movimientoInventarioRepository.findById(id)
                 .orElseThrow(() -> new ValidationException("Movimiento no encontrado"));
 
@@ -165,9 +198,11 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     }
 
     private void updateInventario(MovimientoInventario mov, boolean isRevert) {
-        int qty = mov.getCantidad();
+        int qty = mov.getCantidad() == null ? 0 : mov.getCantidad();
         int multiplier = 0;
         String tipo = mov.getTipoMovimiento();
+        boolean isAjusteConteo = !isRevert && isAjusteInventarioMensual(tipo);
+        LocalDateTime fechaConteo = isAjusteConteo ? LocalDateTime.now() : null;
 
         List<EnumCodigoEstado> salidas = Arrays.asList(
             EnumCodigoEstado.SALIDA, 
@@ -188,6 +223,11 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
             return;
         }
 
+        if (multiplier < 0 && isSalidaRegular(tipo) && isDespachoDeOrdenVenta(mov)) {
+            updateInventarioDespachoOrdenVenta(mov, isRevert);
+            return;
+        }
+
         if (isRevert) {
             multiplier = -multiplier;
         }
@@ -200,11 +240,9 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         List<InventarioItem> items = inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(
                 mov.getProducto().getId(), mov.getUbicacion().getId());
 
-        InventarioItem itemToUpdate = null;
-
-        if (items.isEmpty()) {
-            if (change > 0) {
-                // Crear nuevo item
+        if (change > 0) {
+            InventarioItem itemToUpdate;
+            if (items.isEmpty()) {
                 itemToUpdate = InventarioItem.builder()
                         .producto(mov.getProducto())
                         .ubicacion(mov.getUbicacion())
@@ -212,22 +250,222 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                         .cantidadReservada(0)
                         .build();
             } else {
-                throw new ValidationException("No existe inventario para descontar stock en esta ubicación.");
+                itemToUpdate = items.get(0);
             }
-        } else {
-            // Usar el primer item encontrado (asumiendo gestión simple sin lotes
-            // específicos en movimiento)
-            itemToUpdate = items.get(0);
+
+            int cantidadActual = itemToUpdate.getCantidad() == null ? 0 : itemToUpdate.getCantidad();
+            int nuevaCantidad = cantidadActual + change;
+            if (nuevaCantidad < 0) {
+                throw new ValidationException("La cantidad no puede ser negativa.");
+            }
+            itemToUpdate.setCantidad(nuevaCantidad);
+            if (isAjusteConteo) {
+                itemToUpdate.setFechaUltimoConteo(fechaConteo);
+            }
+            inventarioItemRepository.save(itemToUpdate);
+            return;
         }
 
-        int newQuantity = itemToUpdate.getCantidad() + change;
-        if (newQuantity < 0) {
-            throw new ValidationException("Stock insuficiente. Stock actual: " + itemToUpdate.getCantidad()
-                    + ", cambio solicitado: " + Math.abs(change));
+        if (items.isEmpty()) {
+            throw new ValidationException("No existe inventario para descontar stock en esta ubicación.");
         }
 
-        itemToUpdate.setCantidad(newQuantity);
-        inventarioItemRepository.save(itemToUpdate);
+        for (InventarioItem item : items) {
+            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad();
+            int reservada = item.getCantidadReservada() == null ? 0 : item.getCantidadReservada();
+            if (reservada > cantidad) {
+                throw new ValidationException("Inventario inconsistente: la cantidad reservada es mayor que el stock para el item ID " + item.getId());
+            }
+        }
+
+        int qtyToDeduct = Math.abs(change);
+
+        for (InventarioItem item : items) {
+            if (qtyToDeduct <= 0) {
+                break;
+            }
+
+            int reservada = item.getCantidadReservada() == null ? 0 : item.getCantidadReservada();
+            if (reservada <= 0) {
+                continue;
+            }
+
+            int toConsume = Math.min(reservada, qtyToDeduct);
+            int nuevaReservada = reservada - toConsume;
+
+            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad();
+            int nuevaCantidad = cantidad - toConsume;
+            if (nuevaCantidad < 0) {
+                throw new ValidationException("Stock insuficiente para descontar.");
+            }
+            if (nuevaCantidad < nuevaReservada) {
+                throw new ValidationException("No se puede dejar el stock por debajo del reservado.");
+            }
+
+            item.setCantidad(nuevaCantidad);
+            item.setCantidadReservada(nuevaReservada);
+            if (isAjusteConteo) {
+                item.setFechaUltimoConteo(fechaConteo);
+            }
+            inventarioItemRepository.save(item);
+
+            qtyToDeduct -= toConsume;
+        }
+
+        for (InventarioItem item : items) {
+            if (qtyToDeduct <= 0) {
+                break;
+            }
+
+            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad();
+            int reservada = item.getCantidadReservada() == null ? 0 : item.getCantidadReservada();
+            int disponible = cantidad - reservada;
+            if (disponible <= 0) {
+                continue;
+            }
+
+            int toDeduct = Math.min(disponible, qtyToDeduct);
+            int nuevaCantidad = cantidad - toDeduct;
+            if (nuevaCantidad < reservada) {
+                throw new ValidationException("No se puede dejar el stock por debajo del reservado.");
+            }
+
+            item.setCantidad(nuevaCantidad);
+            if (isAjusteConteo) {
+                item.setFechaUltimoConteo(fechaConteo);
+            }
+            inventarioItemRepository.save(item);
+
+            qtyToDeduct -= toDeduct;
+        }
+
+        if (qtyToDeduct > 0) {
+            throw new ValidationException("Stock insuficiente para descontar. Faltan: " + qtyToDeduct);
+        }
+    }
+
+    private static boolean isAjusteInventarioMensual(String tipo) {
+        if (tipo == null) {
+            return false;
+        }
+        return EnumCodigoEstado.AJUSTE_ENTRADA_INVENTARIO.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_ENTRADA_INVENTARIO.getCodigo().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.getCodigo().equalsIgnoreCase(tipo);
+    }
+
+    private boolean isDespachoDeOrdenVenta(MovimientoInventario mov) {
+        if (mov == null) {
+            return false;
+        }
+        if (mov.getReferencia() == null || mov.getReferencia().isBlank()) {
+            return false;
+        }
+        if (mov.getProducto() == null || mov.getProducto().getId() == null) {
+            return false;
+        }
+
+        Optional<OrdenVenta> ovOpt = ordenVentaRepository.findByNumeroOrden(mov.getReferencia().trim());
+        if (ovOpt == null || ovOpt.isEmpty()) {
+            return false;
+        }
+
+        OrdenVenta ov = ovOpt.get();
+        List<DetalleOrdenVenta> detalles = detalleOrdenVentaRepository.findByOrdenVentaId(ov.getId());
+        if (detalles == null || detalles.isEmpty()) {
+            return false;
+        }
+
+        Integer productoId = mov.getProducto().getId();
+        return detalles.stream().anyMatch(d -> d.getProducto() != null
+                && d.getProducto().getId() != null
+                && d.getProducto().getId().equals(productoId));
+    }
+
+    private void updateInventarioDespachoOrdenVenta(MovimientoInventario mov, boolean isRevert) {
+        int qty = mov.getCantidad() == null ? 0 : mov.getCantidad();
+        if (qty <= 0) {
+            return;
+        }
+
+        List<InventarioItem> items = inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(
+                mov.getProducto().getId(), mov.getUbicacion().getId());
+
+        if (items.isEmpty()) {
+            if (isRevert) {
+                InventarioItem nuevo = InventarioItem.builder()
+                        .producto(mov.getProducto())
+                        .ubicacion(mov.getUbicacion())
+                        .cantidad(qty)
+                        .cantidadReservada(qty)
+                        .build();
+                inventarioItemRepository.save(nuevo);
+                return;
+            }
+            throw new ValidationException("No existe inventario para descontar stock en esta ubicación.");
+        }
+
+        if (!isRevert) {
+            int totalReservado = items.stream()
+                    .mapToInt(i -> i.getCantidadReservada() == null ? 0 : i.getCantidadReservada())
+                    .sum();
+            if (totalReservado < qty) {
+                throw new ValidationException("Reserva insuficiente para despachar en esta ubicación. Faltan: " + (qty - totalReservado));
+            }
+        }
+
+        int qtyToApply = qty;
+        for (InventarioItem item : items) {
+            if (qtyToApply <= 0) {
+                break;
+            }
+
+            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad();
+            int reservada = item.getCantidadReservada() == null ? 0 : item.getCantidadReservada();
+            if (reservada > cantidad) {
+                throw new ValidationException("Inventario inconsistente: la cantidad reservada es mayor que el stock para el item ID " + item.getId());
+            }
+
+            if (isRevert) {
+                int nextCantidad = cantidad + qtyToApply;
+                int nextReservada = reservada + qtyToApply;
+                item.setCantidad(nextCantidad);
+                item.setCantidadReservada(nextReservada);
+                inventarioItemRepository.save(item);
+                qtyToApply = 0;
+                continue;
+            }
+
+            int toDispatch = Math.min(reservada, qtyToApply);
+            if (toDispatch <= 0) {
+                continue;
+            }
+
+            int nextCantidad = cantidad - toDispatch;
+            int nextReservada = reservada - toDispatch;
+            if (nextCantidad < 0) {
+                throw new ValidationException("Stock insuficiente para descontar.");
+            }
+            if (nextReservada < 0) {
+                throw new ValidationException("Reserva insuficiente para despachar en esta ubicación.");
+            }
+            if (nextReservada > nextCantidad) {
+                throw new ValidationException("No se puede dejar el stock por debajo del reservado.");
+            }
+
+            item.setCantidad(nextCantidad);
+            item.setCantidadReservada(nextReservada);
+            inventarioItemRepository.save(item);
+
+            qtyToApply -= toDispatch;
+        }
+
+        if (qtyToApply > 0) {
+            if (isRevert) {
+                throw new ValidationException("No se pudo revertir completamente el despacho. Faltan por revertir: " + qtyToApply);
+            }
+            throw new ValidationException("Reserva insuficiente para despachar en esta ubicación. Faltan: " + qtyToApply);
+        }
     }
 
     private void updateOrdenesRelacionadas(MovimientoInventario mov, boolean isRevert) {
@@ -245,6 +483,10 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
         }
 
         String referencia = mov.getReferencia().trim();
+
+        if (isAjusteInventarioMensual(mov.getTipoMovimiento())) {
+            return;
+        }
 
         if (isEntrada(mov.getTipoMovimiento())) {
             if (applyRecepcionOrdenCompra(referencia, mov, isRevert)) {
@@ -366,6 +608,14 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
                 || EnumCodigoEstado.SALIDA.getCodigo().equalsIgnoreCase(tipo)
                 || EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.name().equalsIgnoreCase(tipo)
                 || EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.getCodigo().equalsIgnoreCase(tipo);
+    }
+
+    private static boolean isSalidaRegular(String tipo) {
+        if (tipo == null) {
+            return false;
+        }
+        return EnumCodigoEstado.SALIDA.name().equalsIgnoreCase(tipo)
+                || EnumCodigoEstado.SALIDA.getCodigo().equalsIgnoreCase(tipo);
     }
 
     private void validarCamposBaseMovimientoInventario(MovimientoInventarioDto dto) {
