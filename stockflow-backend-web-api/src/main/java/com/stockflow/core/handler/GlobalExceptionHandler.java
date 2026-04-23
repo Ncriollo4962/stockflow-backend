@@ -3,10 +3,12 @@ package com.stockflow.core.handler;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.stockflow.core.exception.ConflictException;
+import com.stockflow.core.exception.ValidationException;
 import com.stockflow.core.utils.common.ApiResponse;
 import com.stockflow.core.utils.common.TypeException;
 
@@ -26,6 +28,9 @@ public class GlobalExceptionHandler {
             } else if (ex.getMessage().contains("foreign key constraint fails")) {
                 mensaje = "No se puede eliminar o modificar el registro porque tiene datos asociados.";
                 titulo = "Restricción Referencial";
+            } else if (ex.getMessage().contains("Check constraint")) {
+                mensaje = "La operación viola una restricción de datos. Verifica cantidades y reservas de inventario.";
+                titulo = "Restricción de Datos";
             }
         }
 
@@ -38,6 +43,36 @@ public class GlobalExceptionHandler {
                 .data(ex.getMostSpecificCause().getMessage()) // Agregamos detalles técnicos en data para debug
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse> handleValidation(ValidationException ex) {
+        ApiResponse response = ApiResponse.builder()
+                .error(true)
+                .codigo("400")
+                .titulo("Validación")
+                .mensaje(ex.getMessage())
+                .type(TypeException.W)
+                .data(ex.getFieldName())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(JpaSystemException.class)
+    public ResponseEntity<ApiResponse> handleJpaSystem(JpaSystemException ex) {
+        String msg = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        if (msg != null && msg.contains("Check constraint")) {
+            ApiResponse response = ApiResponse.builder()
+                    .error(true)
+                    .codigo("409")
+                    .titulo("Restricción de Datos")
+                    .mensaje("La operación viola una restricción de datos. Verifica cantidades y reservas de inventario.")
+                    .type(TypeException.E)
+                    .data(msg)
+                    .build();
+            return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+        }
+        return handleGeneralException(ex);
     }
 
     // 2. Manejo de Excepciones Generales (500)

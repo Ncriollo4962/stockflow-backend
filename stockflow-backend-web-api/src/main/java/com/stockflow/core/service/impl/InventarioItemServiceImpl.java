@@ -3,10 +3,12 @@ package com.stockflow.core.service.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.stockflow.core.config.ApplicationConfig.DeadlockRetryExecutor;
 import com.stockflow.core.dto.InventarioItemDto;
 import com.stockflow.core.entity.InventarioItem;
 import com.stockflow.core.entity.Producto;
@@ -28,10 +30,29 @@ public class InventarioItemServiceImpl implements InventarioItemService {
     private final InventarioItemRepository inventarioItemRepository;
     private final ProductoRepository productoRepository;
     private final UbicacionRepository ubicacionRepository;
+    private final DeadlockRetryExecutor deadlockRetryExecutor;
+
+    private <T> T executeWithRetry(Supplier<T> action) {
+        DeadlockRetryExecutor executor = deadlockRetryExecutor;
+        return executor != null ? executor.execute(action) : action.get();
+    }
+
+    private void runWithRetry(Runnable action) {
+        DeadlockRetryExecutor executor = deadlockRetryExecutor;
+        if (executor != null) {
+            executor.run(action);
+            return;
+        }
+        action.run();
+    }
 
     @Override
-    @Transactional
     public InventarioItemDto insert(InventarioItemDto dto) {
+        return executeWithRetry(() -> insertInternal(dto));
+    }
+
+    @Transactional
+    protected InventarioItemDto insertInternal(InventarioItemDto dto) {
         ValidationUtil.isRequired(dto.getProducto(), "El producto es requerido.");
         ValidationUtil.isRequired(dto.getUbicacion(), "La ubicación es requerida.");
         ValidationUtil.isRequired(dto.getCantidad(), "La cantidad es requerida.");
@@ -83,8 +104,12 @@ public class InventarioItemServiceImpl implements InventarioItemService {
     }
 
     @Override
-    @Transactional
     public InventarioItemDto update(InventarioItemDto dto) {
+        return executeWithRetry(() -> updateInternal(dto));
+    }
+
+    @Transactional
+    protected InventarioItemDto updateInternal(InventarioItemDto dto) {
         InventarioItem oldEntity = inventarioItemRepository.findById(dto.getId())
                 .orElseThrow(() -> new ValidationException("Item de inventario no encontrado"));
 
@@ -150,14 +175,24 @@ public class InventarioItemServiceImpl implements InventarioItemService {
         if (dto.getLote() != null) oldEntity.setLote(dto.getLote());
         if (dto.getFechaVencimiento() != null) oldEntity.setFechaVencimiento(dto.getFechaVencimiento());
         if (dto.getFechaUltimoConteo() != null) oldEntity.setFechaUltimoConteo(dto.getFechaUltimoConteo());
+
+        int cantidad = oldEntity.getCantidad() == null ? 0 : oldEntity.getCantidad();
+        int reservada = oldEntity.getCantidadReservada() == null ? 0 : oldEntity.getCantidadReservada();
+        if (cantidad < reservada) {
+            throw new ValidationException("La cantidad no puede ser menor que la cantidad reservada.");
+        }
         
         InventarioItem saved = inventarioItemRepository.save(oldEntity);
         return InventarioItemDto.build().fromEntity(saved);
     }
 
     @Override
-    @Transactional
     public void delete(Integer id) {
+        runWithRetry(() -> deleteInternal(id));
+    }
+
+    @Transactional
+    protected void deleteInternal(Integer id) {
         InventarioItem entity = inventarioItemRepository.findById(id)
                 .orElseThrow(() -> new ValidationException("Item de inventario no encontrado"));
         

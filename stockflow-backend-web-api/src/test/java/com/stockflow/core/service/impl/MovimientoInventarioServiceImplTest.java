@@ -28,7 +28,9 @@ import com.stockflow.core.dto.UbicacionDto;
 import com.stockflow.core.dto.UsuarioDto;
 import com.stockflow.core.entity.InventarioItem;
 import com.stockflow.core.entity.DetalleOrdenCompra;
+import com.stockflow.core.entity.DetalleOrdenVenta;
 import com.stockflow.core.entity.OrdenCompra;
+import com.stockflow.core.entity.OrdenVenta;
 import com.stockflow.core.entity.MovimientoInventario;
 import com.stockflow.core.entity.Producto;
 import com.stockflow.core.entity.Ubicacion;
@@ -109,6 +111,23 @@ class MovimientoInventarioServiceImplTest {
         }
 
         @Test
+        void debeActualizarFechaUltimoConteo_cuandoEsAjusteEntradaInventarioMensual() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setTipoMovimiento(EnumCodigoEstado.AJUSTE_ENTRADA_INVENTARIO.getCodigo());
+            dto.setCantidad(5);
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of());
+
+            MovimientoInventarioDto saved = service.insert(dto);
+
+            assertNotNull(saved);
+            ArgumentCaptor<InventarioItem> captor = ArgumentCaptor.forClass(InventarioItem.class);
+            verify(inventarioItemRepository).save(captor.capture());
+            assertNotNull(captor.getValue().getFechaUltimoConteo());
+        }
+
+        @Test
         void debeLanzarExcepcion_cuandoEsSalidaYNoExisteInventarioEnUbicacion() {
             MovimientoInventarioDto dto = buildMovimientoBase();
             dto.setTipoMovimiento(EnumCodigoEstado.SALIDA.getCodigo());
@@ -120,6 +139,91 @@ class MovimientoInventarioServiceImplTest {
             assertThrows(ValidationException.class, () -> service.insert(dto));
             verify(inventarioItemRepository, never()).save(any());
         }
+
+        @Test
+        void debeActualizarFechaUltimoConteo_cuandoEsAjusteSalidaInventarioMensual() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setTipoMovimiento(EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.getCodigo());
+            dto.setCantidad(1);
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+
+            InventarioItem item = InventarioItem.builder()
+                    .id(100)
+                    .producto(Producto.builder().id(10).build())
+                    .ubicacion(Ubicacion.builder().id(20).build())
+                    .cantidad(5)
+                    .cantidadReservada(0)
+                    .build();
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of(item));
+
+            MovimientoInventarioDto saved = service.insert(dto);
+
+            assertNotNull(saved);
+            ArgumentCaptor<InventarioItem> captor = ArgumentCaptor.forClass(InventarioItem.class);
+            verify(inventarioItemRepository).save(captor.capture());
+            assertEquals(4, captor.getValue().getCantidad());
+            assertNotNull(captor.getValue().getFechaUltimoConteo());
+        }
+
+        @Test
+        void debeActualizarFechaUltimoConteo_yNoDespacharOrdenVenta_cuandoEsAjusteSalidaAunqueReferenciaSeaOV() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setReferencia("OV-2026-001");
+            dto.setTipoMovimiento(EnumCodigoEstado.AJUSTE_SALIDA_INVENTARIO.getCodigo());
+            dto.setCantidad(1);
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+
+            InventarioItem item = InventarioItem.builder()
+                    .id(100)
+                    .producto(Producto.builder().id(10).build())
+                    .ubicacion(Ubicacion.builder().id(20).build())
+                    .cantidad(5)
+                    .cantidadReservada(0)
+                    .build();
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of(item));
+
+            MovimientoInventarioDto saved = service.insert(dto);
+
+            assertNotNull(saved);
+            ArgumentCaptor<InventarioItem> captor = ArgumentCaptor.forClass(InventarioItem.class);
+            verify(inventarioItemRepository).save(captor.capture());
+            assertEquals(4, captor.getValue().getCantidad());
+            assertEquals(0, captor.getValue().getCantidadReservada());
+            assertNotNull(captor.getValue().getFechaUltimoConteo());
+            verify(ordenVentaRepository, never()).findByNumeroOrden(any());
+            verify(detalleOrdenVentaRepository, never()).findByOrdenVentaId(any());
+            verify(detalleOrdenVentaRepository, never()).save(any());
+            verify(ordenVentaRepository, never()).save(any());
+        }
+
+        @Test
+        void debeActualizarInventario_cuandoSalidaDejaCantidadYCantidadReservadaEnCero() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setTipoMovimiento(EnumCodigoEstado.SALIDA.getCodigo());
+            dto.setCantidad(1);
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+
+            InventarioItem item = InventarioItem.builder()
+                    .id(100)
+                    .producto(Producto.builder().id(10).build())
+                    .ubicacion(Ubicacion.builder().id(20).build())
+                    .cantidad(1)
+                    .cantidadReservada(0)
+                    .build();
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of(item));
+
+            MovimientoInventarioDto saved = service.insert(dto);
+            assertNotNull(saved);
+            verify(inventarioItemRepository, never()).delete(any());
+            ArgumentCaptor<InventarioItem> captor = ArgumentCaptor.forClass(InventarioItem.class);
+            verify(inventarioItemRepository).save(captor.capture());
+            assertEquals(0, captor.getValue().getCantidad());
+            assertEquals(0, captor.getValue().getCantidadReservada());
+        }
+
 
         @Test
         void debeMarcarDetalleYOrdenComoRecibidaCompleta_cuandoCantidadRecibidaIgualSolicitada() {
@@ -159,6 +263,81 @@ class MovimientoInventarioServiceImplTest {
             verify(detalleOrdenCompraRepository).save(det);
             verify(ordenCompraRepository).save(oc);
         }
+
+        @Test
+        void debeDescontarCantidadYReservada_cuandoSalidaEsDespachoDeOrdenVenta() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setReferencia("OV-2026-001");
+            dto.setTipoMovimiento(EnumCodigoEstado.SALIDA.getCodigo());
+            dto.setCantidad(2);
+
+            OrdenVenta ov = OrdenVenta.builder().id(50).numeroOrden("OV-2026-001").build();
+            when(ordenVentaRepository.findByNumeroOrden("OV-2026-001")).thenReturn(Optional.of(ov));
+            DetalleOrdenVenta det = DetalleOrdenVenta.builder()
+                    .id(60)
+                    .ordenVenta(ov)
+                    .producto(Producto.builder().id(10).build())
+                    .cantidad(5)
+                    .cantidadDespachada(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo())
+                    .build();
+            when(detalleOrdenVentaRepository.findByOrdenVentaId(50)).thenReturn(List.of(det));
+            when(detalleOrdenVentaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, DetalleOrdenVenta.class));
+            when(ordenVentaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, OrdenVenta.class));
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+
+            InventarioItem item = InventarioItem.builder()
+                    .id(100)
+                    .producto(Producto.builder().id(10).build())
+                    .ubicacion(Ubicacion.builder().id(20).build())
+                    .cantidad(10)
+                    .cantidadReservada(5)
+                    .build();
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of(item));
+
+            MovimientoInventarioDto saved = service.insert(dto);
+
+            assertNotNull(saved);
+            ArgumentCaptor<InventarioItem> captor = ArgumentCaptor.forClass(InventarioItem.class);
+            verify(inventarioItemRepository).save(captor.capture());
+            assertEquals(8, captor.getValue().getCantidad());
+            assertEquals(3, captor.getValue().getCantidadReservada());
+        }
+
+        @Test
+        void debeLanzarExcepcion_cuandoDespachoOrdenVenta_noTieneReservaSuficienteEnUbicacion() {
+            MovimientoInventarioDto dto = buildMovimientoBase();
+            dto.setReferencia("OV-2026-001");
+            dto.setTipoMovimiento(EnumCodigoEstado.SALIDA.getCodigo());
+            dto.setCantidad(2);
+
+            OrdenVenta ov = OrdenVenta.builder().id(50).numeroOrden("OV-2026-001").build();
+            when(ordenVentaRepository.findByNumeroOrden("OV-2026-001")).thenReturn(Optional.of(ov));
+            DetalleOrdenVenta det = DetalleOrdenVenta.builder()
+                    .id(60)
+                    .ordenVenta(ov)
+                    .producto(Producto.builder().id(10).build())
+                    .cantidad(5)
+                    .cantidadDespachada(0)
+                    .estadoDetalle(EnumCodigoEstado.PENDIENTE_DESPACHO.getCodigo())
+                    .build();
+            when(detalleOrdenVentaRepository.findByOrdenVentaId(50)).thenReturn(List.of(det));
+
+            when(movimientoInventarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0, MovimientoInventario.class));
+
+            InventarioItem item = InventarioItem.builder()
+                    .id(100)
+                    .producto(Producto.builder().id(10).build())
+                    .ubicacion(Ubicacion.builder().id(20).build())
+                    .cantidad(10)
+                    .cantidadReservada(1)
+                    .build();
+            when(inventarioItemRepository.findForUpdateByProductoIdAndUbicacionId(eq(10), eq(20))).thenReturn(List.of(item));
+
+            assertThrows(ValidationException.class, () -> service.insert(dto));
+            verify(inventarioItemRepository, never()).save(any());
+        }
     }
 
     @Nested
@@ -186,8 +365,9 @@ class MovimientoInventarioServiceImplTest {
 
             assertThrows(ValidationException.class, () -> service.update(dto));
 
-            verify(inventarioItemRepository).save(item);
-            assertEquals(0, item.getCantidad());
+            ArgumentCaptor<InventarioItem> captor = ArgumentCaptor.forClass(InventarioItem.class);
+            verify(inventarioItemRepository).save(captor.capture());
+            assertEquals(0, captor.getValue().getCantidad());
 
             verify(movimientoInventarioRepository, never()).save(any());
         }
